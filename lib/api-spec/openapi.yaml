@@ -10,13 +10,36 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: me
+    description: Current user
+  - name: books
+    description: Books
+  - name: categories
+    description: Categories
+  - name: racks
+    description: Racks
+  - name: members
+    description: Members
+  - name: borrowings
+    description: Borrowings
+  - name: favorites
+    description: Favorites
+  - name: staff
+    description: Staff management
+  - name: dashboard
+    description: Dashboard
+  - name: notifications
+    description: Notifications
+  - name: reports
+    description: Reports
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +47,1195 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthToken"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /me:
+    get:
+      operationId: getMe
+      tags: [me]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+
+  /me/change-password:
+    post:
+      operationId: changePassword
+      tags: [me]
+      summary: Change password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordInput"
+      responses:
+        "200":
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /books:
+    get:
+      operationId: listBooks
+      tags: [books]
+      summary: List books
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: categoryId
+          in: query
+          schema:
+            type: integer
+        - name: rackId
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of books
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookListResponse"
+    post:
+      operationId: createBook
+      tags: [books]
+      summary: Create a book
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+
+  /books/public:
+    get:
+      operationId: listPublicBooks
+      tags: [books]
+      summary: List books publicly
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: categoryId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of books
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookListResponse"
+
+  /books/{id}:
+    patch:
+      operationId: updateBook
+      tags: [books]
+      summary: Update a book
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+    delete:
+      operationId: deleteBook
+      tags: [books]
+      summary: Delete a book
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List categories
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+    post:
+      operationId: createCategory
+      tags: [categories]
+      summary: Create a category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+
+  /categories/{id}:
+    patch:
+      operationId: updateCategory
+      tags: [categories]
+      summary: Update a category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+    delete:
+      operationId: deleteCategory
+      tags: [categories]
+      summary: Delete a category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /racks:
+    get:
+      operationId: listRacks
+      tags: [racks]
+      summary: List racks
+      responses:
+        "200":
+          description: List of racks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Rack"
+    post:
+      operationId: createRack
+      tags: [racks]
+      summary: Create a rack
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RackInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rack"
+
+  /racks/{id}:
+    patch:
+      operationId: updateRack
+      tags: [racks]
+      summary: Update a rack
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RackInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rack"
+    delete:
+      operationId: deleteRack
+      tags: [racks]
+      summary: Delete a rack
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /members:
+    get:
+      operationId: listMembers
+      tags: [members]
+      summary: List members
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: className
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of members
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberListResponse"
+    post:
+      operationId: createMember
+      tags: [members]
+      summary: Create a member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemberInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+
+  /members/{id}:
+    patch:
+      operationId: updateMember
+      tags: [members]
+      summary: Update a member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemberUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+    delete:
+      operationId: deleteMember
+      tags: [members]
+      summary: Delete a member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /borrowings:
+    get:
+      operationId: listBorrowings
+      tags: [borrowings]
+      summary: List borrowings
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: memberId
+          in: query
+          schema:
+            type: integer
+        - name: bookId
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of borrowings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BorrowingListResponse"
+    post:
+      operationId: createBorrowing
+      tags: [borrowings]
+      summary: Create a borrowing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BorrowingInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Borrowing"
+
+  /borrowings/{id}/return:
+    post:
+      operationId: returnBook
+      tags: [borrowings]
+      summary: Return a borrowed book
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Book returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Borrowing"
+
+  /favorites:
+    get:
+      operationId: getFavorites
+      tags: [favorites]
+      summary: Get user favorites
+      responses:
+        "200":
+          description: Favorite books
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Book"
+    post:
+      operationId: addFavorite
+      tags: [favorites]
+      summary: Add a book to favorites
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FavoriteInput"
+      responses:
+        "201":
+          description: Added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /favorites/ids:
+    get:
+      operationId: getFavoriteIds
+      tags: [favorites]
+      summary: Get favorite book IDs
+      responses:
+        "200":
+          description: List of favorite book IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+
+  /favorites/{bookId}:
+    delete:
+      operationId: removeFavorite
+      tags: [favorites]
+      summary: Remove from favorites
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /staff:
+    get:
+      operationId: listStaff
+      tags: [staff]
+      summary: List staff
+      responses:
+        "200":
+          description: List of staff
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StaffMember"
+    post:
+      operationId: createStaff
+      tags: [staff]
+      summary: Create staff
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+
+  /staff/{id}:
+    patch:
+      operationId: updateStaff
+      tags: [staff]
+      summary: Update staff
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+    delete:
+      operationId: deleteStaff
+      tags: [staff]
+      summary: Delete staff
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get dashboard statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/chart:
+    get:
+      operationId: getDashboardChart
+      tags: [dashboard]
+      summary: Get chart data
+      responses:
+        "200":
+          description: Chart data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChartDataPoint"
+
+  /dashboard/activities:
+    get:
+      operationId: getRecentActivities
+      tags: [dashboard]
+      summary: Get recent activities
+      responses:
+        "200":
+          description: Activities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Activity"
+
+  /dashboard/top-books:
+    get:
+      operationId: getTopBooks
+      tags: [dashboard]
+      summary: Get top books
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Top books
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopBook"
+
+  /notifications:
+    get:
+      operationId: getNotifications
+      tags: [notifications]
+      summary: Get notifications
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationResponse"
+
+  /reports/summary:
+    get:
+      operationId: getReportSummary
+      tags: [reports]
+      summary: Get report summary
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+        - name: endDate
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Report summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportSummary"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    MessageResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+
+    LoginInput:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    AuthToken:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/StaffMember"
+
+    ChangePasswordInput:
+      type: object
+      required: [oldPassword, newPassword]
+      properties:
+        oldPassword:
+          type: string
+        newPassword:
+          type: string
+
+    Book:
+      type: object
+      required: [id, isbn, title, author, stock, status]
+      properties:
+        id:
+          type: integer
+        isbn:
+          type: string
+        title:
+          type: string
+        author:
+          type: string
+        publisher:
+          type: ["string", "null"]
+        year:
+          type: ["integer", "null"]
+        stock:
+          type: integer
+        available:
+          type: integer
+        description:
+          type: ["string", "null"]
+        pages:
+          type: ["integer", "null"]
+        categoryId:
+          type: ["integer", "null"]
+        rackId:
+          type: ["integer", "null"]
+        coverUrl:
+          type: ["string", "null"]
+        categoryName:
+          type: ["string", "null"]
+        rackName:
+          type: ["string", "null"]
+        borrowCount:
+          type: integer
+        status:
+          type: string
+          enum: [available, borrowed]
+        createdAt:
+          type: ["string", "null"]
+
+    BookListResponse:
+      type: object
+      required: [data, total]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Book"
+        total:
+          type: integer
+
+    BookInput:
+      type: object
+      required: [isbn, title, author]
+      properties:
+        isbn:
+          type: string
+        title:
+          type: string
+        author:
+          type: string
+        publisher:
+          type: string
+        year:
+          type: integer
+        stock:
+          type: integer
+        description:
+          type: string
+        pages:
+          type: integer
+        categoryId:
+          type: integer
+        rackId:
+          type: integer
+        coverUrl:
+          type: string
+
+    Category:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        bookCount:
+          type: integer
+        createdAt:
+          type: ["string", "null"]
+
+    CategoryInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    Rack:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        location:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        bookCount:
+          type: integer
+        createdAt:
+          type: ["string", "null"]
+
+    RackInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        description:
+          type: string
+
+    Member:
+      type: object
+      required: [id, memberNumber, name, status]
+      properties:
+        id:
+          type: integer
+        memberNumber:
+          type: string
+        name:
+          type: string
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        className:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, inactive]
+        fine:
+          type: number
+        borrowCount:
+          type: integer
+        createdAt:
+          type: ["string", "null"]
+
+    MemberListResponse:
+      type: object
+      required: [data, total]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Member"
+        total:
+          type: integer
+
+    MemberInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        className:
+          type: string
+
+    MemberUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        className:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+
+    Borrowing:
+      type: object
+      required: [id, memberId, bookId, borrowDate, dueDate, status]
+      properties:
+        id:
+          type: integer
+        borrowCode:
+          type: ["string", "null"]
+        memberId:
+          type: integer
+        bookId:
+          type: integer
+        borrowDate:
+          type: string
+        dueDate:
+          type: string
+        returnDate:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [borrowed, returned, overdue]
+        fine:
+          type: number
+        notes:
+          type: ["string", "null"]
+        memberName:
+          type: ["string", "null"]
+        memberNumber:
+          type: ["string", "null"]
+        bookTitle:
+          type: ["string", "null"]
+        bookIsbn:
+          type: ["string", "null"]
+        createdAt:
+          type: ["string", "null"]
+
+    BorrowingListResponse:
+      type: object
+      required: [data, total]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Borrowing"
+        total:
+          type: integer
+
+    BorrowingInput:
+      type: object
+      required: [memberId, bookId, dueDate]
+      properties:
+        memberId:
+          type: integer
+        bookId:
+          type: integer
+        dueDate:
+          type: string
+        notes:
+          type: string
+
+    FavoriteInput:
+      type: object
+      required: [bookId]
+      properties:
+        bookId:
+          type: integer
+
+    StaffMember:
+      type: object
+      required: [id, username, name, role]
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        name:
+          type: string
+        email:
+          type: ["string", "null"]
+        role:
+          type: string
+        createdAt:
+          type: ["string", "null"]
+
+    StaffInput:
+      type: object
+      required: [username, password, name, role]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+
+    StaffUpdate:
+      type: object
+      properties:
+        password:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+
+    DashboardStats:
+      type: object
+      required: [totalBooks, totalMembers, totalBorrowed, totalAvailable, totalFine, overdueCount]
+      properties:
+        totalBooks:
+          type: integer
+        totalMembers:
+          type: integer
+        totalBorrowed:
+          type: integer
+        totalAvailable:
+          type: integer
+        totalFine:
+          type: number
+        overdueCount:
+          type: integer
+
+    ChartDataPoint:
+      type: object
+      required: [month, borrowed, returned]
+      properties:
+        month:
+          type: string
+        borrowed:
+          type: integer
+        returned:
+          type: integer
+
+    Activity:
+      type: object
+      required: [id, type, description, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        description:
+          type: string
+        staffId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+
+    TopBook:
+      type: object
+      required: [id, title, author, borrowCount]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        author:
+          type: string
+        coverUrl:
+          type: ["string", "null"]
+        borrowCount:
+          type: integer
+
+    NotificationItem:
+      type: object
+      required: [id, title, message, type, read, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        message:
+          type: string
+        type:
+          type: string
+        read:
+          type: boolean
+        createdAt:
+          type: string
+
+    NotificationResponse:
+      type: object
+      required: [unreadCount, items]
+      properties:
+        unreadCount:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/NotificationItem"
+
+    ReportSummary:
+      type: object
+      required: [totalBorrowings, totalReturned, totalOverdue, totalFine, totalMembers, totalBooks]
+      properties:
+        totalBorrowings:
+          type: integer
+        totalReturned:
+          type: integer
+        totalOverdue:
+          type: integer
+        totalFine:
+          type: number
+        totalMembers:
+          type: integer
+        totalBooks:
+          type: integer
+        chartData:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChartDataPoint"

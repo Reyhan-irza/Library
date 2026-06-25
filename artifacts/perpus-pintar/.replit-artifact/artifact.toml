@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Perpustakaan SMKN 2 Lubuk Basung"
+version = "1.0.0"
+id = "artifacts/perpus-pintar"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25795
+
+[services.development]
+run = "pnpm --filter @workspace/perpus-pintar run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/perpus-pintar", "run", "build" ]
+publicDir = "artifacts/perpus-pintar/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25795"
+BASE_PATH = "/"
