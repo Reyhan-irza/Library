@@ -1,0 +1,9 @@
+{
+  "buildCommand": "pnpm --filter @workspace/perpus-pintar run build",
+  "outputDirectory": "artifacts/perpus-pintar/dist/public",
+  "installCommand": "pnpm install",
+  "framework": null,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/" }
+  ]
+}
