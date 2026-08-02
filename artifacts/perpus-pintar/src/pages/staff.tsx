@@ -1,32 +1,14 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, UserCog, X, Loader2, Edit, Trash2, Shield } from "lucide-react";
+import { motion } from "framer-motion";
+import { Plus, Search, UserCog, Loader2, Edit, Trash2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { useListStaff, useCreateStaff, useUpdateStaff, useDeleteStaff } from "@/hooks/api";
 import type { StaffMember, StaffInput, StaffUpdate } from "@/types";
 import { cn } from "@/lib/utils";
-
-function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
-  return (
-    <AnimatePresence>
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-          <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 320, damping: 30 }}
-            className="relative bg-card border border-border/50 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="flex items-center justify-between p-5 border-b border-border/50">
-              <h2 className="text-sm font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>{title}</h2>
-              <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-muted transition-colors"><X size={15} /></button>
-            </div>
-            <div className="p-5">{children}</div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
-  );
-}
+import AppModal from "@/components/ui/app-modal";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
+import { SkeletonRow } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default function StaffPage() {
   const { data: staff = [], isLoading } = useListStaff();
@@ -36,6 +18,7 @@ export default function StaffPage() {
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [editStaff, setEditStaff] = useState<StaffMember | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // Add form state
   const [addForm, setAddForm] = useState<StaffInput>({ email: "", password: "", name: "", role: "librarian" });
@@ -60,12 +43,20 @@ export default function StaffPage() {
     });
   }
 
+  function handleDelete() {
+    if (!deleteId) return;
+    deleteStaff.mutate(deleteId, {
+      onSuccess: () => { toast.success("Staff dihapus"); setDeleteId(null); },
+      onError: (e: any) => { toast.error(e?.message ?? "Gagal menghapus staff"); setDeleteId(null); },
+    });
+  }
+
   return (
     <div className="space-y-5">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold gradient-text" style={{ fontFamily: "'Sora', sans-serif" }}>Staff</h1>
+          <h1 className="text-2xl font-extrabold gradient-text font-heading">Staff</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{staff.length} staff terdaftar</p>
         </div>
         <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => setShowAdd(true)}
@@ -74,10 +65,6 @@ export default function StaffPage() {
         </motion.button>
       </motion.div>
 
-      <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-400">
-        <strong>Catatan:</strong> Pembuatan staff baru menggunakan email. Pastikan konfirmasi email dinonaktifkan di Supabase Dashboard → Authentication → Email → "Confirm email".
-      </div>
-
       <div className="relative">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari nama atau email…"
@@ -85,7 +72,9 @@ export default function StaffPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary" /></div>
+        <div className="space-y-2">
+          {Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)}
+        </div>
       ) : (
         <div className="space-y-2">
           {filtered.map((s, i) => (
@@ -108,7 +97,7 @@ export default function StaffPage() {
                   className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all">
                   <Edit size={13} />
                 </button>
-                <button onClick={() => { if (confirm("Hapus staff ini?")) deleteStaff.mutate(s.id, { onSuccess: () => toast.success("Staff dihapus"), onError: (e: any) => toast.error(e?.message) }); }}
+                <button onClick={() => setDeleteId(s.id)}
                   className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all">
                   <Trash2 size={13} />
                 </button>
@@ -116,15 +105,12 @@ export default function StaffPage() {
             </motion.div>
           ))}
           {!filtered.length && (
-            <div className="text-center py-16 text-muted-foreground">
-              <UserCog size={32} className="mx-auto mb-2 opacity-30" />
-              <p className="text-sm">Tidak ada staff ditemukan</p>
-            </div>
+            <EmptyState variant={search ? "search" : "staff"} />
           )}
         </div>
       )}
 
-      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Tambah Staff">
+      <AppModal open={showAdd} onClose={() => setShowAdd(false)} title="Tambah Staff">
         <form onSubmit={handleCreate} className="space-y-3">
           {[
             { key: "name" as const, label: "Nama Lengkap *", type: "text", required: true },
@@ -151,9 +137,9 @@ export default function StaffPage() {
             {createStaff.isPending ? <><Loader2 size={15} className="animate-spin" /> Menyimpan…</> : "Tambah Staff"}
           </button>
         </form>
-      </Modal>
+      </AppModal>
 
-      <Modal open={!!editStaff} onClose={() => setEditStaff(null)} title="Edit Staff">
+      <AppModal open={!!editStaff} onClose={() => setEditStaff(null)} title="Edit Staff">
         {editStaff && (
           <form onSubmit={handleUpdate} className="space-y-3">
             <div>
@@ -175,7 +161,17 @@ export default function StaffPage() {
             </button>
           </form>
         )}
-      </Modal>
+      </AppModal>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Hapus Staff"
+        message="Profil staff ini akan dihapus. Catatan: akun Supabase Auth perlu dihapus manual dari dashboard Supabase untuk mencabut akses sepenuhnya."
+        confirmLabel="Hapus Staff"
+        loading={deleteStaff.isPending}
+      />
     </div>
   );
 }

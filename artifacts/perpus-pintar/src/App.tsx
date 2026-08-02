@@ -5,9 +5,10 @@ import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import AnimatedBackground from "@/components/animated-bg";
 import Layout from "@/components/layout";
-import { isAuthenticated, initAuth } from "@/lib/auth";
+import { isAuthenticated, initAuth, getUser } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
+import LandingPage from "@/pages/landing";
 import LoginPage from "@/pages/login";
 import DashboardPage from "@/pages/dashboard";
 import BooksPage from "@/pages/books";
@@ -31,7 +32,7 @@ const queryClient = new QueryClient({
 });
 
 function PrivateRoute({ component: Component }: { component: React.ComponentType }) {
-  if (!isAuthenticated()) return <Redirect to="/" />;
+  if (!isAuthenticated()) return <Redirect to="/login" />;
   return (
     <Layout>
       <Component />
@@ -42,7 +43,13 @@ function PrivateRoute({ component: Component }: { component: React.ComponentType
 function AppRoutes() {
   return (
     <Switch>
-      <Route path="/" component={LoginPage} />
+      {/* Public landing page */}
+      <Route path="/" component={LandingPage} />
+
+      {/* Login moved to /login */}
+      <Route path="/login" component={LoginPage} />
+
+      {/* Protected routes */}
       <Route path="/dashboard">
         {() => <PrivateRoute component={DashboardPage} />}
       </Route>
@@ -93,6 +100,18 @@ export default function App() {
     });
 
     return () => subscription.unsubscribe();
+  }, []);
+
+  // If user is authenticated and visits root, redirect to dashboard
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (isAuthenticated()) {
+        const path = window.location.pathname;
+        if (path === "/") {
+          window.history.replaceState(null, "", "/dashboard");
+        }
+      }
+    }
   }, []);
 
   if (!ready) {

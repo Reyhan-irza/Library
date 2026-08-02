@@ -34,7 +34,7 @@ export default function ProfilePage() {
   return (
     <div className="space-y-5 max-w-lg">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl font-extrabold gradient-text" style={{ fontFamily: "'Sora', sans-serif" }}>Profil</h1>
+        <h1 className="text-2xl font-extrabold gradient-text font-heading">Profil</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Informasi akun Anda</p>
       </motion.div>
 

@@ -416,6 +416,10 @@ export function useCreateStaff() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: StaffInput) => {
+      // Phase A fix: supabase.auth.signUp() replaces the active session.
+      // Save the current admin session and restore it after creating the new account.
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+
       const { data, error } = await supabase.auth.signUp({
         email: input.email,
         password: input.password,
@@ -424,6 +428,14 @@ export function useCreateStaff() {
         },
       });
       if (error) throw error;
+
+      // Restore the admin session that signUp replaced
+      if (currentSession) {
+        await supabase.auth.setSession({
+          access_token: currentSession.access_token,
+          refresh_token: currentSession.refresh_token,
+        });
+      }
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: getStaffQueryKey() }),
@@ -549,20 +561,33 @@ export function useGetDashboardChart() {
   return useQuery({
     queryKey: getDashboardChartQueryKey(),
     queryFn: async () => {
-      const months: ChartData[] = [];
+      // Phase C fix: replaced 6 sequential round-trip queries with a single
+      // query for the whole 6-month window, then aggregate client-side.
       const now = new Date();
+      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+      const rangeStart = format(sixMonthsAgo, 'yyyy-MM-01');
+
+      const { data } = await supabase
+        .from('borrowings')
+        .select('borrow_date, return_date')
+        .gte('borrow_date', rangeStart);
+
+      const rows = data ?? [];
+      const months: ChartData[] = [];
+
       for (let i = 5; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const start = format(d, 'yyyy-MM-01');
-        const end = format(new Date(d.getFullYear(), d.getMonth() + 1, 0), 'yyyy-MM-dd');
-        const { data } = await supabase
-          .from('borrowings')
-          .select('borrow_date, return_date')
-          .gte('borrow_date', start)
-          .lte('borrow_date', end);
-        const borrowed = (data ?? []).length;
-        const returned = (data ?? []).filter((b: any) => b.return_date).length;
-        months.push({ month: format(d, 'MMM'), borrowed, returned });
+        const mStart = new Date(d.getFullYear(), d.getMonth(), 1);
+        const mEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+        const monthRows = rows.filter((b: any) => {
+          const date = new Date(b.borrow_date);
+          return date >= mStart && date <= mEnd;
+        });
+        months.push({
+          month: format(d, 'MMM'),
+          borrowed: monthRows.length,
+          returned: monthRows.filter((b: any) => b.return_date).length,
+        });
       }
       return months;
     },
@@ -593,10 +618,13 @@ export function useGetTopBooks() {
   return useQuery({
     queryKey: getTopBooksQueryKey(),
     queryFn: async () => {
+      // Phase C fix: cap at 500 rows so we don't pull the entire borrowings
+      // table just to aggregate top-5 books client-side.
       const { data, error } = await supabase
         .from('borrowings')
         .select('book_id, books(id, title, author, cover_url)')
-        .neq('book_id', null);
+        .not('book_id', 'is', null)
+        .limit(500);
       if (error) throw error;
       const counts: Record<number, { book: any; count: number }> = {};
       (data ?? []).forEach((b: any) => {
@@ -723,6 +751,41 @@ export function useChangePassword() {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
     },
+  });
+}
+
+// ── Landing page stats (public — graceful fallback on RLS block) ──────────
+
+export const getLandingStatsQueryKey = () => ['landing', 'stats'];
+
+export interface LandingStats {
+  totalBooks: number;
+  totalMembers: number;
+  totalBorrowings: number;
+  availableBooks: number;
+}
+
+export function useLandingStats() {
+  return useQuery<LandingStats>({
+    queryKey: getLandingStatsQueryKey(),
+    queryFn: async (): Promise<LandingStats> => {
+      const [booksRes, membersRes, borrowingsRes, availRes] = await Promise.allSettled([
+        supabase.from('books').select('*', { count: 'exact', head: true }),
+        supabase.from('members').select('*', { count: 'exact', head: true }),
+        supabase.from('borrowings').select('*', { count: 'exact', head: true }),
+        supabase.from('books').select('*', { count: 'exact', head: true }).gt('available_stock', 0),
+      ]);
+      const getCount = (res: PromiseSettledResult<{ count: number | null; data: unknown; error: unknown }>) =>
+        res.status === 'fulfilled' ? (res.value.count ?? 0) : 0;
+      return {
+        totalBooks:      getCount(booksRes as PromiseSettledResult<{ count: number | null; data: unknown; error: unknown }>),
+        totalMembers:    getCount(membersRes as PromiseSettledResult<{ count: number | null; data: unknown; error: unknown }>),
+        totalBorrowings: getCount(borrowingsRes as PromiseSettledResult<{ count: number | null; data: unknown; error: unknown }>),
+        availableBooks:  getCount(availRes as PromiseSettledResult<{ count: number | null; data: unknown; error: unknown }>),
+      };
+    },
+    retry: false,
+    staleTime: 1000 * 60 * 5,
   });
 }
 

@@ -46,8 +46,8 @@ export default function ReportsPage() {
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold gradient-text" style={{ fontFamily: "'Sora', sans-serif" }}>Laporan</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Statistik dan ringkasan perpustakaan</p>
+          <h1 className="text-2xl font-extrabold gradient-text font-heading">Laporan</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Statistik dan ringkasan Vireon Library</p>
         </div>
         <div className="flex gap-1 p-1 bg-muted rounded-xl">
           {([["thisMonth", "Bulan Ini"], ["lastMonth", "Bulan Lalu"], ["all", "Semua"]] as const).map(([val, label]) => (

@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { motion, useInView } from "framer-motion";
 import {
   BookOpen, Users, ArrowLeftRight, CheckCircle2,
   AlertTriangle, TrendingUp, Clock, Activity,
@@ -18,18 +19,45 @@ import { cn } from "@/lib/utils";
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
 const item = { hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 280, damping: 26 } } };
 
+/* ── Count-up animation ─────────────────────────────────────────────────── */
+function useCountUp(target: number) {
+  const [display, setDisplay] = useState(0);
+  const rafRef = useRef<number>();
+  useEffect(() => {
+    if (!target) { setDisplay(0); return; }
+    let startTime: number | null = null;
+    const duration = 1100;
+    const tick = (ts: number) => {
+      if (!startTime) startTime = ts;
+      const p = Math.min((ts - startTime) / duration, 1);
+      setDisplay(Math.round((1 - Math.pow(1 - p, 3)) * target));
+      if (p < 1) rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [target]);
+  return display;
+}
+
+function NumericValue({ value }: { value: number }) {
+  const animated = useCountUp(value);
+  return <>{animated.toLocaleString("id-ID")}</>;
+}
+
 function StatCard({ icon: Icon, label, value, sub, colorClass, glowClass }: {
   icon: React.ElementType; label: string; value: string | number; sub?: string;
   colorClass: string; glowClass: string;
 }) {
   return (
-    <motion.div variants={item} className={cn("glass rounded-3xl p-5 shadow-card transition-all duration-300", glowClass)}>
+    <motion.div variants={item} className={cn("glass rounded-3xl p-5 shadow-card card-lift transition-all duration-300", glowClass)}>
       <div className="flex items-start justify-between mb-3">
         <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center", colorClass)}>
           <Icon size={18} className="text-current" />
         </div>
       </div>
-      <p className="text-2xl font-extrabold text-foreground" style={{ fontFamily: "'Outfit', sans-serif" }}>{value}</p>
+      <p className="text-2xl font-extrabold text-foreground font-heading">
+        {typeof value === "number" ? <NumericValue value={value} /> : value}
+      </p>
       <p className="text-xs font-medium text-muted-foreground mt-0.5">{label}</p>
       {sub && <p className="text-[10px] text-muted-foreground/70 mt-1">{sub}</p>}
     </motion.div>
@@ -41,14 +69,16 @@ export default function DashboardPage() {
   const { data: chart } = useGetDashboardChart();
   const { data: activities } = useGetRecentActivities();
   const { data: topBooks } = useGetTopBooks();
+  const chartRef = useRef<HTMLDivElement>(null);
+  const chartInView = useInView(chartRef, { once: true, margin: "-50px" });
 
   return (
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl font-extrabold gradient-text" style={{ fontFamily: "'Sora', sans-serif" }}>
+        <h1 className="text-2xl font-extrabold gradient-text font-heading">
           Dashboard
         </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Ringkasan aktivitas perpustakaan</p>
+        <p className="text-sm text-muted-foreground mt-0.5">Ringkasan aktivitas Vireon Library</p>
       </motion.div>
 
       {/* Stats */}
@@ -71,10 +101,13 @@ export default function DashboardPage() {
       {/* Chart + Top Books */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="lg:col-span-2 glass rounded-3xl p-5 shadow-card"
+          ref={chartRef}
+          initial={{ opacity: 0, y: 20 }}
+          animate={chartInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+          className="lg:col-span-2 glass rounded-3xl p-5 shadow-card card-lift"
         >
-          <h2 className="text-sm font-bold text-foreground mb-4" style={{ fontFamily: "'Outfit', sans-serif" }}>
+          <h2 className="text-sm font-bold text-foreground mb-4 font-heading">
             Tren Peminjaman (6 Bulan)
           </h2>
           <ResponsiveContainer width="100%" height={200}>
@@ -106,7 +139,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
           className="glass rounded-3xl p-5 shadow-card"
         >
-          <h2 className="text-sm font-bold text-foreground mb-4" style={{ fontFamily: "'Outfit', sans-serif" }}>
+          <h2 className="text-sm font-bold text-foreground mb-4 font-heading">
             Buku Terpopuler
           </h2>
           <div className="space-y-3">
@@ -138,7 +171,7 @@ export default function DashboardPage() {
       >
         <div className="flex items-center gap-2 mb-4">
           <Activity size={15} className="text-primary" />
-          <h2 className="text-sm font-bold text-foreground" style={{ fontFamily: "'Outfit', sans-serif" }}>Aktivitas Terkini</h2>
+          <h2 className="text-sm font-bold text-foreground font-heading">Aktivitas Terkini</h2>
         </div>
         <div className="space-y-3">
           {(activities ?? []).map(a => (

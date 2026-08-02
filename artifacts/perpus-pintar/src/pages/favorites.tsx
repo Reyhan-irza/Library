@@ -6,6 +6,8 @@ import { useGetFavorites, useGetFavoriteIds, useRemoveFavorite, useAddFavorite }
 import type { Book } from "@/types";
 import BookDetailSheet from "@/components/book-detail-sheet";
 import { cn } from "@/lib/utils";
+import { SkeletonBookCard } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default function FavoritesPage() {
   const { data: favorites = [], isLoading } = useGetFavorites();
@@ -28,7 +30,7 @@ export default function FavoritesPage() {
   return (
     <div className="space-y-5">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl font-extrabold gradient-text" style={{ fontFamily: "'Sora', sans-serif" }}>Favorit</h1>
+        <h1 className="text-2xl font-extrabold gradient-text font-heading">Favorit</h1>
         <p className="text-sm text-muted-foreground mt-0.5">{favorites.length} buku favorit</p>
       </motion.div>
 
@@ -39,7 +41,9 @@ export default function FavoritesPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary" /></div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          {Array.from({ length: 12 }).map((_, i) => <SkeletonBookCard key={i} />)}
+        </div>
       ) : (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
           className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
@@ -68,10 +72,11 @@ export default function FavoritesPage() {
             </motion.div>
           ))}
           {!filtered.length && (
-            <div className="col-span-full text-center py-16 text-muted-foreground">
-              <Heart size={32} className="mx-auto mb-2 opacity-30" />
-              <p className="text-sm">{search ? "Tidak ada hasil" : "Belum ada buku favorit"}</p>
-              {!search && <p className="text-xs mt-1">Tambahkan buku ke favorit dari halaman Koleksi Buku</p>}
+            <div className="col-span-full">
+              <EmptyState
+                variant={search ? "search" : "favorites"}
+                description={!search ? "Buka Koleksi Buku dan klik ikon hati untuk menandai favorit." : undefined}
+              />
             </div>
           )}
         </motion.div>

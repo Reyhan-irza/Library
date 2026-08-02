@@ -1,31 +1,13 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, FolderOpen, X, Loader2, Edit, Trash2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { Plus, Search, FolderOpen, Loader2, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useListCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from "@/hooks/api";
 import type { Category, CategoryInput } from "@/types";
-
-function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
-  return (
-    <AnimatePresence>
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-          <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 320, damping: 30 }}
-            className="relative bg-card border border-border/50 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="flex items-center justify-between p-5 border-b border-border/50">
-              <h2 className="text-sm font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>{title}</h2>
-              <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-muted transition-colors"><X size={15} /></button>
-            </div>
-            <div className="p-5">{children}</div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
-  );
-}
+import AppModal from "@/components/ui/app-modal";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
+import { SkeletonCard } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 
 function CategoryForm({ initial, onSubmit, loading }: { initial?: Partial<CategoryInput>; onSubmit: (d: CategoryInput) => void; loading: boolean }) {
   const [name, setName] = useState(initial?.name ?? "");
@@ -58,16 +40,25 @@ export default function CategoriesPage() {
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [editCat, setEditCat] = useState<Category | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const filtered = categories.filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()));
+
+  function handleDelete() {
+    if (!deleteId) return;
+    deleteCategory.mutate(deleteId, {
+      onSuccess: () => { toast.success("Kategori dihapus"); setDeleteId(null); },
+      onError: (e: any) => { toast.error(e?.message ?? "Gagal menghapus kategori"); setDeleteId(null); },
+    });
+  }
 
   return (
     <div className="space-y-5">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold gradient-text" style={{ fontFamily: "'Sora', sans-serif" }}>Kategori</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{categories.length} kategori</p>
+          <h1 className="text-2xl font-extrabold gradient-text font-heading">Kategori</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{categories.length} kategori terdaftar</p>
         </div>
         <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => setShowAdd(true)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-primary text-primary-foreground text-sm font-bold shadow-sm shadow-primary/20 hover:bg-primary/90 transition-all">
@@ -82,7 +73,9 @@ export default function CategoriesPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary" /></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map((c, i) => (
@@ -98,7 +91,7 @@ export default function CategoriesPage() {
                     className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all">
                     <Edit size={12} />
                   </button>
-                  <button onClick={() => { if (confirm("Hapus kategori ini?")) deleteCategory.mutate(c.id, { onSuccess: () => toast.success("Kategori dihapus"), onError: (e: any) => toast.error(e?.message) }); }}
+                  <button onClick={() => setDeleteId(c.id)}
                     className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all">
                     <Trash2 size={12} />
                   </button>
@@ -112,24 +105,45 @@ export default function CategoriesPage() {
             </motion.div>
           ))}
           {!filtered.length && (
-            <div className="col-span-full text-center py-16 text-muted-foreground">
-              <FolderOpen size={32} className="mx-auto mb-2 opacity-30" />
-              <p className="text-sm">Belum ada kategori</p>
+            <div className="col-span-full">
+              <EmptyState variant={search ? "search" : "categories"} />
             </div>
           )}
         </div>
       )}
 
-      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Tambah Kategori">
-        <CategoryForm onSubmit={d => createCategory.mutate(d, { onSuccess: () => { toast.success("Kategori ditambahkan"); setShowAdd(false); }, onError: (e: any) => toast.error(e?.message) })} loading={createCategory.isPending} />
-      </Modal>
-      <Modal open={!!editCat} onClose={() => setEditCat(null)} title="Edit Kategori">
+      <AppModal open={showAdd} onClose={() => setShowAdd(false)} title="Tambah Kategori">
+        <CategoryForm
+          onSubmit={d => createCategory.mutate(d, {
+            onSuccess: () => { toast.success("Kategori ditambahkan"); setShowAdd(false); },
+            onError: (e: any) => toast.error(e?.message),
+          })}
+          loading={createCategory.isPending}
+        />
+      </AppModal>
+
+      <AppModal open={!!editCat} onClose={() => setEditCat(null)} title="Edit Kategori">
         {editCat && (
-          <CategoryForm initial={{ name: editCat.name, description: editCat.description ?? "" }}
-            onSubmit={d => updateCategory.mutate({ id: editCat.id, data: d }, { onSuccess: () => { toast.success("Kategori diperbarui"); setEditCat(null); }, onError: (e: any) => toast.error(e?.message) })}
-            loading={updateCategory.isPending} />
+          <CategoryForm
+            initial={{ name: editCat.name, description: editCat.description ?? "" }}
+            onSubmit={d => updateCategory.mutate({ id: editCat.id, data: d }, {
+              onSuccess: () => { toast.success("Kategori diperbarui"); setEditCat(null); },
+              onError: (e: any) => toast.error(e?.message),
+            })}
+            loading={updateCategory.isPending}
+          />
         )}
-      </Modal>
+      </AppModal>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Hapus Kategori"
+        message="Kategori ini akan dihapus permanen. Buku yang terhubung tidak akan ikut terhapus."
+        confirmLabel="Hapus Kategori"
+        loading={deleteCategory.isPending}
+      />
     </div>
   );
 }

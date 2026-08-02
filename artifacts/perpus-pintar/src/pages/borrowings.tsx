@@ -1,34 +1,16 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, ArrowLeftRight, X, Loader2, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import { motion } from "framer-motion";
+import { Plus, Search, ArrowLeftRight, Loader2, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useListBorrowings, useCreateBorrowing, useReturnBook, useListMembers, useListBooks } from "@/hooks/api";
 import type { BorrowingInput } from "@/types";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { addDays, format } from "date-fns";
-
-function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
-  return (
-    <AnimatePresence>
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-          <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", stiffness: 320, damping: 30 }}
-            className="relative bg-card border border-border/50 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="flex items-center justify-between p-5 border-b border-border/50">
-              <h2 className="text-sm font-bold" style={{ fontFamily: "'Outfit', sans-serif" }}>{title}</h2>
-              <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-muted transition-colors"><X size={15} /></button>
-            </div>
-            <div className="p-5">{children}</div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
-  );
-}
+import AppModal from "@/components/ui/app-modal";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
+import { SkeletonRow } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const statusConfig = {
   borrowed: { label: "Dipinjam", icon: Clock, className: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
@@ -46,6 +28,7 @@ export default function BorrowingsPage() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<"" | "borrowed" | "returned" | "overdue">("");
   const [showAdd, setShowAdd] = useState(false);
+  const [returnId, setReturnId] = useState<number | null>(null);
   const [form, setForm] = useState<{ memberId: string; bookId: string; dueDate: string; notes: string }>({
     memberId: "", bookId: "", dueDate: format(addDays(new Date(), 7), "yyyy-MM-dd"), notes: "",
   });
@@ -71,11 +54,11 @@ export default function BorrowingsPage() {
     });
   }
 
-  function handleReturn(id: number) {
-    if (!confirm("Konfirmasi pengembalian buku ini?")) return;
-    returnBook.mutate(id, {
-      onSuccess: () => toast.success("Buku berhasil dikembalikan"),
-      onError: (e: any) => toast.error(e?.message ?? "Gagal memproses pengembalian"),
+  function handleReturn() {
+    if (!returnId) return;
+    returnBook.mutate(returnId, {
+      onSuccess: () => { toast.success("Buku berhasil dikembalikan"); setReturnId(null); },
+      onError: (e: any) => { toast.error(e?.message ?? "Gagal memproses pengembalian"); setReturnId(null); },
     });
   }
 
@@ -84,12 +67,12 @@ export default function BorrowingsPage() {
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold gradient-text" style={{ fontFamily: "'Sora', sans-serif" }}>Peminjaman</h1>
+          <h1 className="text-2xl font-extrabold gradient-text font-heading">Peminjaman</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{borrowings.filter(b => b.status !== "returned").length} aktif</p>
         </div>
         <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
           onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-primary text-primary-foreground text-sm font-bold shadow-sm shadow-primary/20 hover:bg-primary/90 transition-all">
+          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-primary text-primary-foreground text-sm font-bold shadow-sm shadow-primary/20 hover:bg-primary/90 transition-all btn-primary-glow">
           <Plus size={16} /> Pinjam Buku
         </motion.button>
       </motion.div>
@@ -112,7 +95,9 @@ export default function BorrowingsPage() {
       </motion.div>
 
       {isLoading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary" /></div>
+        <div className="space-y-2">
+          {Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)}
+        </div>
       ) : (
         <div className="space-y-2">
           {filtered.map((b, i) => {
@@ -122,9 +107,9 @@ export default function BorrowingsPage() {
               <motion.div key={b.id}
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04, type: "spring", stiffness: 280, damping: 26 }}
-                className="glass rounded-2xl p-4 shadow-card flex items-center gap-4">
-                <div className={cn("w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0", cfg.className.replace("text-", "bg-").replace("bg-", "bg-"))}>
-                  <Icon size={15} className={cfg.className.split(" ").find(c => c.startsWith("text-")) ?? ""} />
+                className="glass rounded-2xl p-4 shadow-card card-lift flex items-center gap-4">
+                <div className={cn("w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0", cfg.className)}>
+                  <Icon size={15} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
@@ -140,14 +125,14 @@ export default function BorrowingsPage() {
                     <span>Pinjam: {formatDate(b.borrowDate)}</span>
                     <span>Jatuh tempo: {formatDate(b.dueDate)}</span>
                     {b.returnDate && <span>Kembali: {formatDate(b.returnDate)}</span>}
-                    {b.fine ? <span className="text-rose-500 font-semibold">Denda: Rp {b.fine.toLocaleString("id-ID")}</span> : null}
+                    {(b.fine ?? 0) > 0 && <span className="text-rose-500 font-semibold">Denda: Rp {b.fine!.toLocaleString("id-ID")}</span>}
                   </div>
                 </div>
                 {b.status !== "returned" && (
                   <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                    onClick={() => handleReturn(b.id)}
+                    onClick={() => setReturnId(b.id)}
                     disabled={returnBook.isPending}
-                    className="flex-shrink-0 px-3 py-2 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary hover:text-primary-foreground transition-all">
+                    className="flex-shrink-0 px-3 py-2 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50">
                     Kembalikan
                   </motion.button>
                 )}
@@ -155,15 +140,12 @@ export default function BorrowingsPage() {
             );
           })}
           {!filtered.length && (
-            <div className="text-center py-16 text-muted-foreground">
-              <ArrowLeftRight size={32} className="mx-auto mb-2 opacity-30" />
-              <p className="text-sm">Tidak ada data peminjaman</p>
-            </div>
+            <EmptyState variant={search || filterStatus ? "search" : "borrowings"} />
           )}
         </div>
       )}
 
-      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Catat Peminjaman">
+      <AppModal open={showAdd} onClose={() => setShowAdd(false)} title="Catat Peminjaman">
         <form onSubmit={handleCreate} className="space-y-3">
           <div>
             <label className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Anggota *</label>
@@ -196,7 +178,18 @@ export default function BorrowingsPage() {
             {createBorrowing.isPending ? <><Loader2 size={15} className="animate-spin" /> Memproses…</> : "Pinjam Buku"}
           </button>
         </form>
-      </Modal>
+      </AppModal>
+
+      <ConfirmDialog
+        open={!!returnId}
+        onClose={() => setReturnId(null)}
+        onConfirm={handleReturn}
+        title="Konfirmasi Pengembalian"
+        message="Tandai buku ini sebagai dikembalikan? Denda akan dihitung otomatis jika sudah melewati jatuh tempo."
+        confirmLabel="Ya, Kembalikan"
+        loading={returnBook.isPending}
+        variant="warning"
+      />
     </div>
   );
 }
