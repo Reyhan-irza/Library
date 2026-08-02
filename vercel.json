@@ -1,8 +1,11 @@
 {
-  "buildCommand": "pnpm --filter @workspace/perpus-pintar run build",
-  "outputDirectory": "artifacts/perpus-pintar/dist",
-  "installCommand": "pnpm install",
-  "framework": null,
+  "builds": [
+    {
+      "src": "artifacts/perpus-pintar/package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "dist" }
+    }
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/" }
   ]
