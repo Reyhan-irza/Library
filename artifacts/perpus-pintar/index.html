@@ -9,7 +9,8 @@
     <meta property="og:description" content="Vireon Library System" />
     <meta property="og:type" content="website" />
     <title>Vireon Library</title>
-    <!-- Preload logo so it is already in cache when React mounts -->
+    <!-- Preload critical images so hero renders instantly -->
+    <link rel="preload" as="image" href="/library-bg.jpg" fetchpriority="high" type="image/jpeg" />
     <link rel="preload" as="image" href="/vireon-logo.webp" fetchpriority="high" type="image/webp" />
     <link rel="icon" type="image/png" href="/vireon-logo.png" />
   </head>

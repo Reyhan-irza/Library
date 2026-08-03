@@ -94,41 +94,31 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col lg:flex-row bg-white overflow-hidden">
 
       {/* ── Left — Brand Panel ───────────────────────────────────────────── */}
-      <div className="relative lg:w-[46%] bg-slate-900 flex flex-col overflow-hidden">
+      <div className="relative lg:w-[46%] flex flex-col overflow-hidden">
 
-        {/* Decorative background layers */}
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          {/* Dot grid */}
-          <svg className="absolute inset-0 w-full h-full opacity-[0.055]">
-            <defs>
-              <pattern id="login-dots" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
-                <circle cx="1.5" cy="1.5" r="1.5" fill="white" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#login-dots)" />
-          </svg>
-          {/* Primary orb — top left */}
-          <div
-            className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full"
-            style={{ background: "radial-gradient(circle, hsl(161 50% 40% / 0.28) 0%, transparent 65%)" }}
+        {/* Library photo background */}
+        <div className="absolute inset-0 pointer-events-none select-none" aria-hidden="true">
+          <img
+            src="/library-bg.jpg"
+            alt=""
+            className="w-full h-full object-cover"
+            style={{ objectPosition: "center 30%" }}
+            loading="eager"
+            decoding="sync"
           />
-          {/* Accent orb — bottom right */}
+          {/* Dark emerald overlay */}
           <div
-            className="absolute -bottom-24 -right-16 w-[380px] h-[380px] rounded-full"
-            style={{ background: "radial-gradient(circle, hsl(161 50% 35% / 0.18) 0%, transparent 65%)" }}
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(160deg, hsl(161 62% 5% / 0.93) 0%, hsl(161 48% 9% / 0.85) 55%, hsl(161 38% 8% / 0.89) 100%)",
+            }}
           />
-          {/* Horizontal accent lines */}
-          <div className="absolute inset-x-0 top-[28%] h-px bg-gradient-to-r from-transparent via-white/[0.04] to-transparent" />
-          <div className="absolute inset-x-0 top-[56%] h-px bg-gradient-to-r from-transparent via-white/[0.04] to-transparent" />
-          {/* Large watermark text */}
-          <div
-            className="absolute -bottom-4 -right-4 font-black leading-none select-none text-white/[0.025] tracking-tighter"
-            style={{ fontSize: "clamp(80px, 14vw, 140px)" }}
-          >
-            VIREON
-          </div>
+          {/* Subtle vignette edges */}
+          <div className="absolute inset-x-0 top-0 h-24" style={{ background: "linear-gradient(to bottom, hsl(161 62% 4% / 0.5), transparent)" }} />
+          <div className="absolute inset-x-0 bottom-0 h-24" style={{ background: "linear-gradient(to top, hsl(161 62% 4% / 0.5), transparent)" }} />
           {/* Thin right border glow */}
-          <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent" />
+          <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/15 to-transparent" />
         </div>
 
         {/* Content */}

@@ -7,7 +7,7 @@
  */
 
 import { Link } from "wouter";
-import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
+import { motion, useReducedMotion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   BookOpen,
@@ -194,10 +194,14 @@ function LandingNav() {
     setTimeout(() => scrollTo(id), 50);
   }, []);
 
+  const navItem = scrolled
+    ? "text-[13.5px] font-medium text-slate-500 hover:text-slate-900 px-3.5 py-2 rounded-lg hover:bg-slate-50 transition-colors duration-150"
+    : "text-[13.5px] font-medium text-white/75 hover:text-white px-3.5 py-2 rounded-lg hover:bg-white/10 transition-colors duration-150";
+
   return (
     <>
       <header
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-200 ${
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
           scrolled
             ? "bg-white/[0.97] backdrop-blur-xl border-b border-slate-200/70 shadow-[0_1px_0_0_rgba(0,0,0,0.04),0_4px_16px_-2px_rgba(0,0,0,0.04)]"
             : "bg-transparent"
@@ -206,7 +210,7 @@ function LandingNav() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[60px] flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-2.5 shrink-0">
-            <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 ring-1 ring-slate-900/8">
+            <div className={`w-7 h-7 rounded-lg overflow-hidden shrink-0 ring-1 transition-all duration-300 ${scrolled ? "ring-slate-900/8" : "ring-white/20"}`}>
               <img
                 src={VIREON_LOGO}
                 alt="VIREON"
@@ -216,10 +220,10 @@ function LandingNav() {
               />
             </div>
             <div className="leading-none">
-              <span className="text-[13px] font-bold text-slate-900 tracking-[0.05em]">
+              <span className={`text-[13px] font-bold tracking-[0.05em] transition-colors duration-300 ${scrolled ? "text-slate-900" : "text-white"}`}>
                 VIREON
               </span>
-              <span className="hidden sm:block text-[9.5px] font-medium text-slate-400 uppercase tracking-[0.14em] mt-0.5">
+              <span className={`hidden sm:block text-[9.5px] font-medium uppercase tracking-[0.14em] mt-0.5 transition-colors duration-300 ${scrolled ? "text-slate-400" : "text-white/50"}`}>
                 Library System
               </span>
             </div>
@@ -235,7 +239,7 @@ function LandingNav() {
               <button
                 key={id}
                 onClick={() => handleScroll(id)}
-                className="text-[13.5px] font-medium text-slate-500 hover:text-slate-900 px-3.5 py-2 rounded-lg hover:bg-slate-50 transition-colors duration-150"
+                className={navItem}
               >
                 {label}
               </button>
@@ -246,13 +250,13 @@ function LandingNav() {
           <div className="hidden md:flex items-center gap-2">
             <Link
               href="/login"
-              className="text-[13.5px] font-medium text-slate-500 hover:text-slate-900 px-3.5 py-2 rounded-lg hover:bg-slate-50 transition-colors duration-150"
+              className={navItem}
             >
               Masuk
             </Link>
             <Link
               href="/login"
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[hsl(161_52%_26%)] hover:bg-[hsl(161_52%_22%)] text-white text-[13.5px] font-semibold rounded-lg transition-all duration-150 active:scale-[0.98] shadow-[0_1px_3px_rgba(0,0,0,0.2)]"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[hsl(161_52%_38%)] hover:bg-[hsl(161_52%_44%)] text-white text-[13.5px] font-semibold rounded-lg transition-all duration-150 active:scale-[0.98] shadow-[0_1px_3px_rgba(0,0,0,0.25)]"
             >
               Mulai Sekarang
               <ChevronRight className="w-3.5 h-3.5" />
@@ -262,7 +266,7 @@ function LandingNav() {
           {/* Mobile toggle */}
           <button
             onClick={() => setMobileOpen((v) => !v)}
-            className="md:hidden p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+            className={`md:hidden p-2 rounded-lg transition-colors ${scrolled ? "text-slate-500 hover:text-slate-900 hover:bg-slate-50" : "text-white/80 hover:text-white hover:bg-white/10"}`}
             aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
             aria-expanded={mobileOpen}
           >
@@ -506,65 +510,66 @@ function DashboardPreview({
 function HeroSection() {
   const { data: stats, isLoading } = useLandingStats();
   const reduced = useReducedMotion();
+  const { scrollY } = useScroll();
+  const bgY = useTransform(scrollY, [0, 700], ["0%", "18%"]);
 
   return (
     <section className="relative min-h-[92vh] flex items-center pt-[60px] overflow-hidden">
-      {/* Background layers */}
-      <div className="absolute inset-0 pointer-events-none select-none" aria-hidden="true">
-        {/* Subtle dot grid */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.018]" aria-hidden="true">
-          <defs>
-            <pattern id="hero-grid" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
-              <circle cx="1" cy="1" r="1" fill="currentColor" className="text-slate-900" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#hero-grid)" />
-        </svg>
 
-        {/* Primary radial — top center */}
-        <div
-          className="absolute inset-x-0 top-0 h-[70vh]"
-          style={{
-            background:
-              "radial-gradient(ellipse 100% 80% at 50% -10%, hsl(161 52% 38% / 0.09) 0%, transparent 65%)",
-          }}
+      {/* ── Library photo background with parallax ── */}
+      <motion.div
+        className="absolute inset-0 scale-[1.12] pointer-events-none select-none"
+        style={{ y: reduced ? undefined : bgY }}
+        aria-hidden="true"
+      >
+        <img
+          src="/library-bg.jpg"
+          alt=""
+          className="w-full h-full object-cover"
+          style={{ objectPosition: "center 35%" }}
+          loading="eager"
+          decoding="sync"
+          fetchPriority="high"
         />
-        {/* Secondary — right side */}
-        <div
-          className="absolute right-0 top-1/4 w-[50vw] h-[60vh]"
-          style={{
-            background:
-              "radial-gradient(ellipse 80% 70% at 100% 50%, hsl(161 52% 30% / 0.05) 0%, transparent 65%)",
-          }}
-        />
-        {/* Tertiary — left accent */}
-        <div
-          className="absolute left-0 bottom-1/4 w-[30vw] h-[40vh]"
-          style={{
-            background:
-              "radial-gradient(ellipse 80% 60% at 0% 50%, hsl(161 52% 30% / 0.04) 0%, transparent 65%)",
-          }}
-        />
-      </div>
+      </motion.div>
 
+      {/* ── Dark emerald overlay — lets warm library tones bleed through ── */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(135deg, hsl(161 62% 5% / 0.91) 0%, hsl(161 48% 9% / 0.82) 55%, hsl(161 38% 8% / 0.86) 100%)",
+        }}
+        aria-hidden="true"
+      />
+
+      {/* ── Top vignette ── */}
+      <div
+        className="absolute inset-x-0 top-0 h-36 pointer-events-none"
+        style={{ background: "linear-gradient(to bottom, hsl(161 62% 4% / 0.55), transparent)" }}
+        aria-hidden="true"
+      />
+
+      {/* ── Content ── */}
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-16 lg:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-[5fr_7fr] gap-12 lg:gap-16 items-center">
 
           {/* Left — copy */}
           <div className="max-w-lg">
+
             {/* Badge */}
             <motion.div {...fadeUp(0, reduced ?? false)}>
               <div
                 className="inline-flex items-center gap-2 text-[11.5px] font-semibold px-3 py-1.5 rounded-full mb-7"
                 style={{
-                  background: "hsl(161 52% 26% / 0.08)",
-                  border: "1px solid hsl(161 52% 26% / 0.22)",
-                  color: "hsl(161 52% 28%)",
+                  background: "hsl(161 52% 68% / 0.13)",
+                  border: "1px solid hsl(161 52% 68% / 0.30)",
+                  color: "hsl(161 52% 78%)",
                 }}
               >
                 <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: "hsl(161 52% 38%)" }}
+                  className="w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{ background: "hsl(161 52% 65%)" }}
                   aria-hidden="true"
                 />
                 Sistem Manajemen Perpustakaan
@@ -574,7 +579,7 @@ function HeroSection() {
             {/* Headline */}
             <motion.h1
               {...fadeUp(0.06, reduced ?? false)}
-              className="text-[2.75rem] sm:text-5xl lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold text-slate-900 leading-[1.04] tracking-[-0.03em]"
+              className="text-[2.75rem] sm:text-5xl lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold text-white leading-[1.04] tracking-[-0.03em]"
             >
               Kelola Perpustakaan
               <br />
@@ -583,7 +588,7 @@ function HeroSection() {
               <span
                 className="inline-block"
                 style={{
-                  background: "linear-gradient(135deg, hsl(161 52% 24%) 0%, hsl(161 68% 36%) 100%)",
+                  background: "linear-gradient(135deg, hsl(161 68% 58%) 0%, hsl(150 80% 70%) 100%)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text",
@@ -596,7 +601,7 @@ function HeroSection() {
             {/* Sub */}
             <motion.p
               {...fadeUp(0.14, reduced ?? false)}
-              className="mt-6 text-[1.0625rem] text-slate-500 leading-[1.65] max-w-[420px]"
+              className="mt-6 text-[1.0625rem] text-white/62 leading-[1.65] max-w-[420px]"
             >
               VIREON menyederhanakan operasional perpustakaan — dari pengelolaan
               koleksi, transaksi peminjaman, hingga laporan analitik — dalam satu
@@ -612,14 +617,14 @@ function HeroSection() {
                 href="/login"
                 className="inline-flex items-center gap-2 px-5 py-3 text-[14px] font-semibold text-white rounded-[10px] transition-all duration-150 active:scale-[0.98] min-h-[44px]"
                 style={{
-                  background: "hsl(161 52% 26%)",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.2), 0 0 0 1px hsl(161 52% 20% / 0.5)",
+                  background: "hsl(161 52% 38%)",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.35), 0 0 0 1px hsl(161 52% 55% / 0.35)",
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.background = "hsl(161 52% 22%)";
+                  (e.currentTarget as HTMLAnchorElement).style.background = "hsl(161 52% 44%)";
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.background = "hsl(161 52% 26%)";
+                  (e.currentTarget as HTMLAnchorElement).style.background = "hsl(161 52% 38%)";
                 }}
               >
                 Masuk ke Sistem
@@ -627,7 +632,7 @@ function HeroSection() {
               </Link>
               <button
                 onClick={() => scrollTo("how")}
-                className="inline-flex items-center gap-2 px-5 py-3 text-[14px] font-medium text-slate-600 bg-white border border-slate-200 rounded-[10px] hover:bg-slate-50 hover:border-slate-300 transition-all duration-150 active:scale-[0.98] min-h-[44px] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
+                className="inline-flex items-center gap-2 px-5 py-3 text-[14px] font-medium text-white/80 bg-white/10 border border-white/20 rounded-[10px] hover:bg-white/16 hover:border-white/32 hover:text-white transition-all duration-150 active:scale-[0.98] min-h-[44px] backdrop-blur-sm"
               >
                 Lihat Cara Kerja
               </button>
@@ -643,10 +648,10 @@ function HeroSection() {
                 "Data aman & terenkripsi",
                 "Pembaruan otomatis",
               ].map((item) => (
-                <div key={item} className="flex items-center gap-1.5 text-[12.5px] text-slate-400">
+                <div key={item} className="flex items-center gap-1.5 text-[12.5px] text-white/48">
                   <CheckCircle2
                     className="w-3.5 h-3.5 shrink-0"
-                    style={{ color: "hsl(161 52% 38%)" }}
+                    style={{ color: "hsl(161 52% 62%)" }}
                   />
                   {item}
                 </div>
@@ -659,18 +664,18 @@ function HeroSection() {
             {...(reduced
               ? {}
               : {
-                  initial: { opacity: 0, x: 24, scale: 0.98 },
+                  initial: { opacity: 0, x: 28, scale: 0.97 },
                   animate: { opacity: 1, x: 0, scale: 1 },
-                  transition: { duration: 0.65, delay: 0.12, ease: EASE_OUT },
+                  transition: { duration: 0.7, delay: 0.14, ease: EASE_OUT },
                 })}
             className="relative w-full"
           >
-            {/* Ambient glow */}
+            {/* Ambient glow behind the preview card */}
             <div
-              className="absolute -inset-10 pointer-events-none"
+              className="absolute -inset-12 pointer-events-none"
               style={{
                 background:
-                  "radial-gradient(ellipse 80% 70% at 50% 50%, hsl(161 52% 38% / 0.1) 0%, transparent 70%)",
+                  "radial-gradient(ellipse 75% 65% at 50% 50%, hsl(161 52% 55% / 0.18) 0%, transparent 70%)",
               }}
               aria-hidden="true"
             />
@@ -680,16 +685,16 @@ function HeroSection() {
               {...(reduced
                 ? {}
                 : {
-                    initial: { opacity: 0, y: 10 },
+                    initial: { opacity: 0, y: 12 },
                     animate: { opacity: 1, y: 0 },
-                    transition: { duration: 0.5, delay: 0.55, ease: EASE_OUT },
+                    transition: { duration: 0.5, delay: 0.58, ease: EASE_OUT },
                   })}
-              className="absolute -top-4 right-6 z-10 flex items-center gap-2 bg-white border border-slate-200/80 rounded-full px-3 py-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]"
+              className="absolute -top-4 right-6 z-10 flex items-center gap-2 bg-white border border-slate-200/80 rounded-full px-3 py-1.5 shadow-[0_6px_20px_rgba(0,0,0,0.14),0_1px_3px_rgba(0,0,0,0.08)]"
               aria-hidden="true"
             >
               <div
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: "hsl(161 52% 38%)" }}
+                className="w-1.5 h-1.5 rounded-full animate-pulse"
+                style={{ background: "hsl(161 52% 44%)" }}
               />
               <span className="text-[11.5px] font-semibold text-slate-700">Sistem Aktif</span>
             </motion.div>
@@ -699,16 +704,16 @@ function HeroSection() {
               {...(reduced
                 ? {}
                 : {
-                    initial: { opacity: 0, y: -10 },
+                    initial: { opacity: 0, y: -12 },
                     animate: { opacity: 1, y: 0 },
-                    transition: { duration: 0.5, delay: 0.65, ease: EASE_OUT },
+                    transition: { duration: 0.5, delay: 0.68, ease: EASE_OUT },
                   })}
-              className="absolute -bottom-4 left-6 z-10 flex items-center gap-2 bg-white border border-slate-200/80 rounded-full px-3 py-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]"
+              className="absolute -bottom-4 left-6 z-10 flex items-center gap-2 bg-white border border-slate-200/80 rounded-full px-3 py-1.5 shadow-[0_6px_20px_rgba(0,0,0,0.14),0_1px_3px_rgba(0,0,0,0.08)]"
               aria-hidden="true"
             >
               <Clock
                 className="w-3 h-3"
-                style={{ color: "hsl(161 52% 38%)" }}
+                style={{ color: "hsl(161 52% 44%)" }}
               />
               <span className="text-[11.5px] font-semibold text-slate-700">Diperbarui real-time</span>
             </motion.div>
@@ -718,12 +723,10 @@ function HeroSection() {
         </div>
       </div>
 
-      {/* Bottom fade */}
+      {/* ── Bottom fade to white ── */}
       <div
-        className="absolute inset-x-0 bottom-0 h-24 pointer-events-none"
-        style={{
-          background: "linear-gradient(to bottom, transparent, white)",
-        }}
+        className="absolute inset-x-0 bottom-0 h-36 pointer-events-none"
+        style={{ background: "linear-gradient(to bottom, transparent, white)" }}
         aria-hidden="true"
       />
     </section>
