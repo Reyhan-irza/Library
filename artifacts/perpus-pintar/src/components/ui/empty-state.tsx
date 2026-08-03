@@ -1,3 +1,4 @@
+import React from "react";
 import { motion } from "framer-motion";
 
 export type EmptyVariant =
@@ -107,7 +108,7 @@ function IllustrationSearch() {
   );
 }
 
-const ILLUSTRATIONS: Record<EmptyVariant, () => JSX.Element> = {
+const ILLUSTRATIONS: Record<EmptyVariant, () => React.ReactElement> = {
   books: IllustrationBooks,
   members: IllustrationPeople,
   staff: IllustrationPeople,

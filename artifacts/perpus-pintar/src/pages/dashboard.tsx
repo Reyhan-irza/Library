@@ -22,7 +22,7 @@ const item = { hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0, transiti
 /* ── Count-up animation ─────────────────────────────────────────────────── */
 function useCountUp(target: number) {
   const [display, setDisplay] = useState(0);
-  const rafRef = useRef<number>();
+  const rafRef = useRef<number>(undefined);
   useEffect(() => {
     if (!target) { setDisplay(0); return; }
     let startTime: number | null = null;

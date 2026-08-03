@@ -1,15 +1,14 @@
 /**
  * VIREON — Landing Page
  *
- * Light-mode only. Every section is a named component for maintainability.
- * Live statistics are fetched directly from Supabase (graceful 0-fallback
- * when accessed by unauthenticated visitors).
+ * Light-mode only. Inter font throughout.
+ * Live statistics from Supabase — skeleton while loading, 0 when empty.
+ * No fabricated data. No off-brand decorations.
  */
 
 import { Link } from "wouter";
 import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
-import type { TargetAndTransition, Transition } from "framer-motion";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
   BookOpen,
   Users,
@@ -25,55 +24,50 @@ import {
   X,
   CheckCircle2,
   Database,
-  FileText,
   TrendingUp,
   ArrowRight,
+  LayoutDashboard,
+  BookMarked,
+  Clock,
+  Activity,
 } from "lucide-react";
 import VIREON_LOGO from "@/assets/logo";
 import { useLandingStats } from "@/hooks/api";
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmt(n: number): string {
   return n.toLocaleString("id-ID");
 }
 
 function scrollTo(id: string) {
-  const el = document.getElementById(id);
-  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-// ─── Animation helpers ───────────────────────────────────────────────────────
+// ─── Animation presets ────────────────────────────────────────────────────────
 
-interface Anim {
-  initial?: TargetAndTransition;
-  animate?: TargetAndTransition;
-  whileInView?: TargetAndTransition;
-  whileHover?: TargetAndTransition;
-  viewport?: { once?: boolean; margin?: string; amount?: number | "some" | "all" };
-  transition?: Transition;
+const EASE_OUT = [0.16, 1, 0.3, 1] as const;
+
+function fadeUp(delay = 0, reduced = false) {
+  if (reduced) return {};
+  return {
+    initial: { opacity: 0, y: 18 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.5, delay, ease: EASE_OUT },
+  };
 }
 
-const EASE = [0.21, 1.04, 0.58, 1] as const;
-
-function fadeUp(delay = 0): Anim {
+function fadeUpView(delay = 0, reduced = false) {
+  if (reduced) return {};
   return {
     initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.55, delay, ease: EASE },
-  };
-}
-
-function fadeUpInView(delay = 0): Anim {
-  return {
-    initial: { opacity: 0, y: 24 },
     whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true, margin: "-40px" },
-    transition: { duration: 0.55, delay, ease: EASE },
+    viewport: { once: true, margin: "-48px" },
+    transition: { duration: 0.5, delay, ease: EASE_OUT },
   };
 }
 
-// ─── Static data ─────────────────────────────────────────────────────────────
+// ─── Static data ──────────────────────────────────────────────────────────────
 
 const FEATURES = [
   {
@@ -81,54 +75,48 @@ const FEATURES = [
     num: "01",
     title: "Manajemen Koleksi",
     desc: "Tambah, edit, dan lacak seluruh koleksi buku dengan mudah. Lengkap dengan kategori, rak, ISBN, dan informasi pengarang.",
+    span: "lg:col-span-2",
+    accent: true,
   },
   {
     icon: Users,
     num: "02",
     title: "Data Anggota",
     desc: "Kelola data siswa dan anggota perpustakaan dalam satu tempat. Pantau riwayat peminjaman dan status denda setiap anggota.",
+    span: "lg:col-span-1",
+    accent: false,
   },
   {
     icon: ArrowLeftRight,
     num: "03",
     title: "Peminjaman & Pengembalian",
     desc: "Catat setiap transaksi dengan cepat dan akurat. Sistem otomatis menghitung denda keterlambatan sesuai kebijakan sekolah.",
+    span: "lg:col-span-1",
+    accent: false,
   },
   {
     icon: BarChart3,
     num: "04",
     title: "Laporan & Statistik",
     desc: "Pantau aktivitas perpustakaan melalui laporan lengkap dan visualisasi tren peminjaman bulanan yang mudah dibaca.",
+    span: "lg:col-span-2",
+    accent: false,
   },
   {
     icon: Search,
     num: "05",
     title: "Pencarian Cepat",
     desc: "Temukan buku, anggota, atau transaksi dalam hitungan detik dengan sistem pencarian yang responsif dan akurat.",
+    span: "lg:col-span-1",
+    accent: false,
   },
   {
     icon: ShieldCheck,
     num: "06",
     title: "Keamanan Terjamin",
-    desc: "Data perpustakaan tersimpan aman dengan enkripsi end-to-end dan sistem kontrol akses berlapis berbasis peran.",
-  },
-] as const;
-
-const BENEFITS = [
-  {
-    icon: Zap,
-    title: "Efisiensi Tinggi",
-    desc: "Alur kerja yang dirancang untuk kecepatan. Kurangi tugas berulang dan selesaikan pekerjaan dengan lebih sedikit langkah.",
-  },
-  {
-    icon: Layers,
-    title: "Terintegrasi Penuh",
-    desc: "Semua modul saling terhubung. Perubahan data di satu tempat langsung tercermin di seluruh sistem secara otomatis.",
-  },
-  {
-    icon: RefreshCw,
-    title: "Data Selalu Akurat",
-    desc: "Sinkronisasi real-time memastikan informasi yang Anda lihat selalu mencerminkan kondisi perpustakaan terkini.",
+    desc: "Data perpustakaan tersimpan aman dengan sistem kontrol akses berlapis berbasis peran dan enkripsi end-to-end.",
+    span: "lg:col-span-1",
+    accent: false,
   },
 ] as const;
 
@@ -137,7 +125,7 @@ const HOW_STEPS = [
     icon: Database,
     num: "01",
     title: "Daftarkan Koleksi",
-    desc: "Input buku, kategori, dan rak dengan form yang mudah. ISBN dan data pengarang tersimpan secara terstruktur.",
+    desc: "Input buku, kategori, dan rak dengan form yang intuitif. ISBN dan data pengarang tersimpan secara terstruktur.",
   },
   {
     icon: ArrowLeftRight,
@@ -165,17 +153,28 @@ const MARQUEE_ITEMS = [
   "Enkripsi Data",
   "Antarmuka Intuitif",
   "Denda Otomatis",
-  "Backup Aman",
 ];
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function Sk({ w = "w-12", h = "h-5" }: { w?: string; h?: string }) {
+  return (
+    <div
+      className={`${w} ${h} rounded bg-slate-200 animate-pulse`}
+      aria-hidden="true"
+    />
+  );
+}
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
 
 function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const reduced = useReducedMotion();
 
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 12);
+    const handler = () => setScrolled(window.scrollY > 16);
     handler();
     window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
@@ -198,134 +197,125 @@ function LandingNav() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-200 ${
           scrolled
-            ? "bg-white/96 backdrop-blur-md border-b border-slate-200/80 shadow-[0_1px_12px_rgba(0,0,0,0.06)]"
+            ? "bg-white/[0.97] backdrop-blur-xl border-b border-slate-200/70 shadow-[0_1px_0_0_rgba(0,0,0,0.04),0_4px_16px_-2px_rgba(0,0,0,0.04)]"
             : "bg-transparent"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[60px] flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-2.5 flex-shrink-0">
-            <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 ring-1 ring-slate-200/80">
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 ring-1 ring-slate-900/8">
               <img
                 src={VIREON_LOGO}
-                alt="Vireon Logo"
+                alt="VIREON"
                 className="w-full h-full object-cover"
                 loading="eager"
                 decoding="sync"
               />
             </div>
-            <div className="flex flex-col leading-none gap-0.5">
-              <span className="text-[13px] font-bold text-slate-900 tracking-[0.06em]">VIREON</span>
-              <span className="text-[9px] font-medium text-slate-400 uppercase tracking-[0.12em]">
+            <div className="leading-none">
+              <span className="text-[13px] font-bold text-slate-900 tracking-[0.05em]">
+                VIREON
+              </span>
+              <span className="hidden sm:block text-[9.5px] font-medium text-slate-400 uppercase tracking-[0.14em] mt-0.5">
                 Library System
               </span>
             </div>
           </div>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1" aria-label="Main navigation">
-            <button
-              onClick={() => handleScroll("how")}
-              className="text-[13.5px] font-medium text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
-            >
-              Cara Kerja
-            </button>
-            <button
-              onClick={() => handleScroll("features")}
-              className="text-[13.5px] font-medium text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
-            >
-              Fitur
-            </button>
-            <button
-              onClick={() => handleScroll("about")}
-              className="text-[13.5px] font-medium text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
-            >
-              Tentang
-            </button>
+          <nav className="hidden md:flex items-center gap-0.5" aria-label="Navigasi utama">
+            {[
+              { label: "Cara Kerja", id: "how" },
+              { label: "Fitur", id: "features" },
+              { label: "Tentang", id: "about" },
+            ].map(({ label, id }) => (
+              <button
+                key={id}
+                onClick={() => handleScroll(id)}
+                className="text-[13.5px] font-medium text-slate-500 hover:text-slate-900 px-3.5 py-2 rounded-lg hover:bg-slate-50 transition-colors duration-150"
+              >
+                {label}
+              </button>
+            ))}
           </nav>
 
-          {/* Desktop CTAs */}
+          {/* CTAs */}
           <div className="hidden md:flex items-center gap-2">
             <Link
               href="/login"
-              className="text-[13.5px] font-medium text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
+              className="text-[13.5px] font-medium text-slate-500 hover:text-slate-900 px-3.5 py-2 rounded-lg hover:bg-slate-50 transition-colors duration-150"
             >
               Masuk
             </Link>
             <Link
               href="/login"
-              className="inline-flex items-center gap-1.5 text-[13.5px] font-semibold bg-primary text-white px-4 py-2 rounded-lg hover:opacity-90 active:scale-[0.98] transition-all"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[hsl(161_52%_26%)] hover:bg-[hsl(161_52%_22%)] text-white text-[13.5px] font-semibold rounded-lg transition-all duration-150 active:scale-[0.98] shadow-[0_1px_3px_rgba(0,0,0,0.2)]"
             >
               Mulai Sekarang
-              <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
+              <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          {/* Mobile hamburger */}
+          {/* Mobile toggle */}
           <button
             onClick={() => setMobileOpen((v) => !v)}
-            className="md:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            className="md:hidden p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors"
             aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
             aria-expanded={mobileOpen}
           >
             {mobileOpen ? (
-              <X className="w-5 h-5" aria-hidden="true" />
+              <X className="w-5 h-5" />
             ) : (
-              <Menu className="w-5 h-5" aria-hidden="true" />
+              <Menu className="w-5 h-5" />
             )}
           </button>
         </div>
       </header>
 
-      {/* Mobile menu */}
+      {/* Mobile drawer */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-            className="fixed top-16 left-0 right-0 z-40 bg-white border-b border-slate-200 shadow-lg md:hidden"
+            initial={reduced ? {} : { opacity: 0, y: -6 }}
+            animate={reduced ? {} : { opacity: 1, y: 0 }}
+            exit={reduced ? {} : { opacity: 0, y: -4 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="fixed top-[60px] inset-x-0 z-40 bg-white/[0.98] backdrop-blur-xl border-b border-slate-200 shadow-xl md:hidden"
             role="dialog"
             aria-modal="true"
-            aria-label="Navigation menu"
           >
-            <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-1">
-              <button
-                onClick={() => handleScroll("how")}
-                className="text-left text-sm font-medium text-slate-700 hover:text-slate-900 px-3 py-3 rounded-xl hover:bg-slate-50 transition-colors min-h-[44px] flex items-center"
-              >
-                Cara Kerja
-              </button>
-              <button
-                onClick={() => handleScroll("features")}
-                className="text-left text-sm font-medium text-slate-700 hover:text-slate-900 px-3 py-3 rounded-xl hover:bg-slate-50 transition-colors min-h-[44px] flex items-center"
-              >
-                Fitur
-              </button>
-              <button
-                onClick={() => handleScroll("about")}
-                className="text-left text-sm font-medium text-slate-700 hover:text-slate-900 px-3 py-3 rounded-xl hover:bg-slate-50 transition-colors min-h-[44px] flex items-center"
-              >
-                Tentang
-              </button>
-              <div className="border-t border-slate-100 mt-2 pt-2 flex flex-col gap-2">
+            <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-0.5">
+              {[
+                { label: "Cara Kerja", id: "how" },
+                { label: "Fitur", id: "features" },
+                { label: "Tentang", id: "about" },
+              ].map(({ label, id }) => (
+                <button
+                  key={id}
+                  onClick={() => handleScroll(id)}
+                  className="text-left text-[15px] font-medium text-slate-700 px-3 py-3.5 rounded-xl hover:bg-slate-50 transition-colors min-h-[44px] flex items-center"
+                >
+                  {label}
+                </button>
+              ))}
+              <div className="border-t border-slate-100 mt-1 pt-3 flex flex-col gap-2">
                 <Link
                   href="/login"
                   onClick={() => setMobileOpen(false)}
-                  className="text-sm font-medium text-slate-700 px-3 py-3 rounded-xl hover:bg-slate-50 transition-colors min-h-[44px] flex items-center"
+                  className="text-[15px] font-medium text-slate-700 px-3 py-3.5 rounded-xl hover:bg-slate-50 transition-colors min-h-[44px] flex items-center"
                 >
                   Masuk
                 </Link>
                 <Link
                   href="/login"
                   onClick={() => setMobileOpen(false)}
-                  className="inline-flex items-center justify-center gap-1.5 text-sm font-semibold bg-primary text-white px-4 py-3 rounded-xl hover:opacity-90 transition-all min-h-[44px]"
+                  className="flex items-center justify-center gap-1.5 text-[15px] font-semibold bg-[hsl(161_52%_26%)] text-white px-4 py-3.5 rounded-xl hover:bg-[hsl(161_52%_22%)] transition-all min-h-[44px]"
                 >
                   Mulai Sekarang
-                  <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
+                  <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
             </div>
@@ -337,105 +327,174 @@ function LandingNav() {
 }
 
 // ─── Dashboard Preview ────────────────────────────────────────────────────────
+// Designed as a realistic app mockup. Replace inner content with
+// a <video> or <img> when a promotional asset is available.
 
 function DashboardPreview({
   stats,
   loading,
 }: {
-  stats:
-    | {
-        totalBooks: number;
-        totalMembers: number;
-        totalBorrowings: number;
-        availableBooks: number;
-      }
-    | undefined;
+  stats?: { totalBooks: number; totalMembers: number; totalBorrowings: number; availableBooks: number };
   loading: boolean;
 }) {
   const cards = [
-    { label: "Total Buku", value: stats?.totalBooks },
-    { label: "Anggota", value: stats?.totalMembers },
-    { label: "Dipinjam", value: stats?.totalBorrowings },
-    { label: "Tersedia", value: stats?.availableBooks },
+    { label: "Total Buku", value: stats?.totalBooks, icon: BookMarked, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "Anggota", value: stats?.totalMembers, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Dipinjam", value: stats?.totalBorrowings, icon: ArrowLeftRight, color: "text-amber-600", bg: "bg-amber-50" },
+    { label: "Tersedia", value: stats?.availableBooks, icon: CheckCircle2, color: "text-slate-500", bg: "bg-slate-50" },
   ];
 
-  const activity = [
-    "Peminjaman baru tercatat",
-    "Buku berhasil dikembalikan",
-    "Anggota baru terdaftar",
+  const navItems = [
+    { icon: LayoutDashboard, label: "Dashboard", active: true },
+    { icon: BookOpen, label: "Buku", active: false },
+    { icon: ArrowLeftRight, label: "Peminjaman", active: false },
+    { icon: Users, label: "Anggota", active: false },
+    { icon: BarChart3, label: "Laporan", active: false },
   ];
+
+  // Static chart bars (7 months) — purely decorative, shows product context
+  const chartBars = [22, 38, 29, 52, 44, 60, 47];
+  const maxBar = Math.max(...chartBars);
 
   return (
     <div
-      className="relative rounded-2xl overflow-hidden shadow-2xl shadow-slate-900/12 border border-slate-200/80 bg-white"
-      style={{ boxShadow: "0 32px 80px -12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04)" }}
+      className="w-full rounded-2xl overflow-hidden border border-slate-200/80"
+      style={{
+        boxShadow:
+          "0 0 0 1px rgba(0,0,0,0.04), 0 24px 64px -12px rgba(0,0,0,0.14), 0 8px 24px -8px rgba(0,0,0,0.08)",
+      }}
     >
-      {/* Window chrome */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/80">
+      {/* Browser chrome */}
+      <div className="flex items-center justify-between px-4 py-2.5 bg-[#f5f5f7] border-b border-slate-200/80">
         <div className="flex items-center gap-1.5" aria-hidden="true">
           <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
           <div className="w-3 h-3 rounded-full bg-[#FEBC2E]" />
           <div className="w-3 h-3 rounded-full bg-[#28C840]" />
         </div>
-        <div className="flex items-center gap-2 px-3 py-1 bg-white rounded-md border border-slate-200/80 shadow-sm">
+        <div className="flex items-center gap-2 px-3 py-1 bg-white rounded-md border border-slate-200/60 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
           <div className="w-1.5 h-1.5 rounded-full bg-slate-300" aria-hidden="true" />
-          <span className="text-[11px] text-slate-400 font-mono select-none">vireon/dashboard</span>
+          <span className="text-[11px] text-slate-400 font-mono">app.vireon.id/dashboard</span>
         </div>
-        <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-600">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600">
+          <Activity className="w-3 h-3" aria-hidden="true" />
           Admin
         </div>
       </div>
 
-      {/* Dashboard body */}
-      <div className="p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-[13px] font-bold text-slate-900">Dashboard</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">Perpustakaan SMKN 2 Lubuk Basung</p>
-          </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200/80 rounded-full">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
-            <span className="text-[10px] font-semibold text-emerald-700">Live</span>
-          </div>
-        </div>
-
-        {/* Stats grid */}
-        <div className="grid grid-cols-2 gap-2.5 mb-4">
-          {cards.map(({ label, value }) => (
+      {/* App layout */}
+      <div className="flex" style={{ background: "#fafafa" }}>
+        {/* Sidebar */}
+        <div className="w-[108px] shrink-0 border-r border-slate-200/60 bg-white flex flex-col py-3">
+          {/* Brand mark */}
+          <div className="flex items-center gap-1.5 px-3 mb-3">
             <div
-              key={label}
-              className="p-3 bg-slate-50 rounded-xl border border-slate-100"
+              className="w-5 h-5 rounded-[5px] flex items-center justify-center shrink-0"
+              style={{ background: "hsl(161 52% 26%)" }}
             >
-              {loading ? (
-                <div className="h-5 w-10 bg-slate-200 rounded animate-pulse mb-1" aria-hidden="true" />
-              ) : (
-                <p className="text-[17px] font-extrabold text-slate-900 tabular-nums">{fmt(value ?? 0)}</p>
-              )}
-              <p className="text-[10px] text-slate-400 font-medium mt-0.5">{label}</p>
+              <BookOpen className="w-2.5 h-2.5 text-white" strokeWidth={2.5} />
             </div>
-          ))}
-        </div>
-
-        {/* Activity list */}
-        <div className="rounded-xl border border-slate-100 overflow-hidden">
-          <div className="px-3 py-2 border-b border-slate-100 bg-slate-50/80">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-              Aktivitas Terbaru
-            </p>
+            <span className="text-[10px] font-extrabold tracking-[0.06em] text-slate-900">
+              VIREON
+            </span>
           </div>
-          {activity.map((item, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-2.5 px-3 py-2.5 border-b last:border-0 border-slate-100"
-            >
+
+          {/* Nav items */}
+          <div className="flex flex-col gap-0.5 px-1.5">
+            {navItems.map(({ icon: Icon, label, active }) => (
               <div
-                className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0"
-                aria-hidden="true"
-              />
-              <p className="text-[11px] text-slate-600 truncate">{item}</p>
+                key={label}
+                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-[6px] ${
+                  active
+                    ? "bg-[hsl(161_52%_26%/0.10)] text-[hsl(161_52%_26%)]"
+                    : "text-slate-400"
+                }`}
+              >
+                <Icon
+                  className="w-2.5 h-2.5 shrink-0"
+                  strokeWidth={active ? 2.25 : 1.75}
+                />
+                <span className="text-[9px] font-medium leading-none">{label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom divider + profile */}
+          <div className="mt-auto px-2.5 pt-2 border-t border-slate-100 mx-2">
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shrink-0" />
+              <div>
+                <div className="text-[8px] font-semibold text-slate-700 leading-none">Admin</div>
+                <div className="text-[7px] text-slate-400 mt-0.5 leading-none">Pustakawan</div>
+              </div>
             </div>
-          ))}
+          </div>
+        </div>
+
+        {/* Main content */}
+        <div className="flex-1 min-w-0 p-3.5">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[12px] font-bold text-slate-900 leading-tight">Dashboard</p>
+              <p className="text-[9.5px] text-slate-400 mt-0.5">Perpustakaan SMKN 2 Lubuk Basung</p>
+            </div>
+            <div
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold"
+              style={{
+                background: "hsl(161 52% 26% / 0.08)",
+                border: "1px solid hsl(161 52% 26% / 0.2)",
+                color: "hsl(161 52% 26%)",
+              }}
+            >
+              <div className="w-1 h-1 rounded-full bg-current animate-pulse" />
+              Live
+            </div>
+          </div>
+
+          {/* Stat cards */}
+          <div className="grid grid-cols-4 gap-2 mb-3">
+            {cards.map(({ label, value, icon: Icon, color, bg }) => (
+              <div
+                key={label}
+                className="bg-white rounded-lg border border-slate-100 p-2 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+              >
+                <div className={`w-5 h-5 rounded-[5px] ${bg} flex items-center justify-center mb-1.5`}>
+                  <Icon className={`w-2.5 h-2.5 ${color}`} strokeWidth={2} />
+                </div>
+                {loading ? (
+                  <div className="h-3.5 w-8 bg-slate-200 rounded animate-pulse mb-0.5" />
+                ) : (
+                  <p className="text-[13px] font-extrabold text-slate-900 tabular-nums leading-none">
+                    {fmt(value ?? 0)}
+                  </p>
+                )}
+                <p className="text-[8px] text-slate-400 font-medium mt-0.5 leading-tight">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Mini chart */}
+          <div className="bg-white rounded-lg border border-slate-100 p-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[9.5px] font-semibold text-slate-700">Tren Peminjaman</p>
+              <span className="text-[8px] text-slate-400">7 bulan terakhir</span>
+            </div>
+            <div className="flex items-end gap-1 h-9">
+              {chartBars.map((h, i) => (
+                <div
+                  key={i}
+                  className="flex-1 rounded-sm transition-all"
+                  style={{
+                    height: `${(h / maxBar) * 100}%`,
+                    background:
+                      i === chartBars.length - 1
+                        ? "hsl(161 52% 30%)"
+                        : "hsl(161 52% 30% / 0.25)",
+                  }}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -446,77 +505,129 @@ function DashboardPreview({
 
 function HeroSection() {
   const { data: stats, isLoading } = useLandingStats();
-  const shouldReduce = useReducedMotion();
-
-  const animProps = (delay: number): Anim =>
-    shouldReduce ? {} : fadeUp(delay);
+  const reduced = useReducedMotion();
 
   return (
-    <section className="relative pt-28 pb-16 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-24 overflow-hidden">
-      {/* Layered background — radial green + grid dots */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        <div
-          className="absolute top-0 left-0 right-0 h-[600px]"
-          style={{
-            background:
-              "radial-gradient(ellipse 90% 70% at 50% -5%, hsl(161 50% 40% / 0.08) 0%, transparent 70%)",
-          }}
-        />
-        <svg className="absolute inset-0 w-full h-full opacity-[0.022]">
+    <section className="relative min-h-[92vh] flex items-center pt-[60px] overflow-hidden">
+      {/* Background layers */}
+      <div className="absolute inset-0 pointer-events-none select-none" aria-hidden="true">
+        {/* Subtle dot grid */}
+        <svg className="absolute inset-0 w-full h-full opacity-[0.018]" aria-hidden="true">
           <defs>
-            <pattern id="hero-dots" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
-              <circle cx="1.5" cy="1.5" r="1.5" fill="currentColor" className="text-slate-900" />
+            <pattern id="hero-grid" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
+              <circle cx="1" cy="1" r="1" fill="currentColor" className="text-slate-900" />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#hero-dots)" />
+          <rect width="100%" height="100%" fill="url(#hero-grid)" />
         </svg>
+
+        {/* Primary radial — top center */}
+        <div
+          className="absolute inset-x-0 top-0 h-[70vh]"
+          style={{
+            background:
+              "radial-gradient(ellipse 100% 80% at 50% -10%, hsl(161 52% 38% / 0.09) 0%, transparent 65%)",
+          }}
+        />
+        {/* Secondary — right side */}
+        <div
+          className="absolute right-0 top-1/4 w-[50vw] h-[60vh]"
+          style={{
+            background:
+              "radial-gradient(ellipse 80% 70% at 100% 50%, hsl(161 52% 30% / 0.05) 0%, transparent 65%)",
+          }}
+        />
+        {/* Tertiary — left accent */}
+        <div
+          className="absolute left-0 bottom-1/4 w-[30vw] h-[40vh]"
+          style={{
+            background:
+              "radial-gradient(ellipse 80% 60% at 0% 50%, hsl(161 52% 30% / 0.04) 0%, transparent 65%)",
+          }}
+        />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-16 lg:py-24">
+        <div className="grid grid-cols-1 lg:grid-cols-[5fr_7fr] gap-12 lg:gap-16 items-center">
+
           {/* Left — copy */}
-          <div className="max-w-xl">
-            <motion.div {...animProps(0)}>
-              <div className="inline-flex items-center gap-2 bg-primary/8 text-primary text-xs font-semibold px-3 py-1.5 rounded-full mb-6 ring-1 ring-primary/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true" />
-                SISTEM MANAJEMEN PERPUSTAKAAN
+          <div className="max-w-lg">
+            {/* Badge */}
+            <motion.div {...fadeUp(0, reduced ?? false)}>
+              <div
+                className="inline-flex items-center gap-2 text-[11.5px] font-semibold px-3 py-1.5 rounded-full mb-7"
+                style={{
+                  background: "hsl(161 52% 26% / 0.08)",
+                  border: "1px solid hsl(161 52% 26% / 0.22)",
+                  color: "hsl(161 52% 28%)",
+                }}
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: "hsl(161 52% 38%)" }}
+                  aria-hidden="true"
+                />
+                Sistem Manajemen Perpustakaan
               </div>
             </motion.div>
 
+            {/* Headline */}
             <motion.h1
-              {...animProps(0.08)}
-              className="text-4xl sm:text-5xl lg:text-[3.4rem] font-extrabold text-slate-900 leading-[1.1] tracking-tight font-sans"
+              {...fadeUp(0.06, reduced ?? false)}
+              className="text-[2.75rem] sm:text-5xl lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold text-slate-900 leading-[1.04] tracking-[-0.03em]"
             >
               Kelola Perpustakaan
               <br />
-              <span className="text-primary">Sekolah</span> dengan
+              Sekolah dengan
               <br />
-              Lebih Cerdas
+              <span
+                className="inline-block"
+                style={{
+                  background: "linear-gradient(135deg, hsl(161 52% 24%) 0%, hsl(161 68% 36%) 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                Lebih Cerdas
+              </span>
             </motion.h1>
 
+            {/* Sub */}
             <motion.p
-              {...animProps(0.16)}
-              className="mt-6 text-lg text-slate-500 leading-relaxed max-w-md"
+              {...fadeUp(0.14, reduced ?? false)}
+              className="mt-6 text-[1.0625rem] text-slate-500 leading-[1.65] max-w-[420px]"
             >
-              VIREON membantu pengelola perpustakaan menangani koleksi buku,
-              anggota, peminjaman, dan laporan — dalam satu platform yang
-              sederhana, cepat, dan terpercaya.
+              VIREON menyederhanakan operasional perpustakaan — dari pengelolaan
+              koleksi, transaksi peminjaman, hingga laporan analitik — dalam satu
+              platform yang bersih dan andal.
             </motion.p>
 
+            {/* CTAs */}
             <motion.div
-              {...animProps(0.24)}
+              {...fadeUp(0.22, reduced ?? false)}
               className="mt-8 flex flex-wrap items-center gap-3"
             >
               <Link
                 href="/login"
-                className="inline-flex items-center gap-2 px-5 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all shadow-md shadow-primary/20 min-h-[44px]"
+                className="inline-flex items-center gap-2 px-5 py-3 text-[14px] font-semibold text-white rounded-[10px] transition-all duration-150 active:scale-[0.98] min-h-[44px]"
+                style={{
+                  background: "hsl(161 52% 26%)",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.2), 0 0 0 1px hsl(161 52% 20% / 0.5)",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLAnchorElement).style.background = "hsl(161 52% 22%)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLAnchorElement).style.background = "hsl(161 52% 26%)";
+                }}
               >
                 Masuk ke Sistem
-                <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                <ChevronRight className="w-4 h-4" />
               </Link>
               <button
                 onClick={() => scrollTo("how")}
-                className="inline-flex items-center gap-2 px-5 py-3 text-sm font-medium text-slate-700 border border-slate-300 rounded-xl hover:bg-slate-50 hover:border-slate-400 active:scale-[0.98] transition-all min-h-[44px]"
+                className="inline-flex items-center gap-2 px-5 py-3 text-[14px] font-medium text-slate-600 bg-white border border-slate-200 rounded-[10px] hover:bg-slate-50 hover:border-slate-300 transition-all duration-150 active:scale-[0.98] min-h-[44px] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
               >
                 Lihat Cara Kerja
               </button>
@@ -524,21 +635,18 @@ function HeroSection() {
 
             {/* Trust signals */}
             <motion.div
-              {...animProps(0.32)}
-              className="mt-8 flex flex-wrap items-center gap-4"
+              {...fadeUp(0.3, reduced ?? false)}
+              className="mt-8 flex flex-wrap gap-x-5 gap-y-2"
             >
               {[
                 "Tidak perlu instalasi",
                 "Data aman & terenkripsi",
                 "Pembaruan otomatis",
               ].map((item) => (
-                <div
-                  key={item}
-                  className="flex items-center gap-1.5 text-xs text-slate-500"
-                >
+                <div key={item} className="flex items-center gap-1.5 text-[12.5px] text-slate-400">
                   <CheckCircle2
-                    className="w-3.5 h-3.5 text-primary flex-shrink-0"
-                    aria-hidden="true"
+                    className="w-3.5 h-3.5 shrink-0"
+                    style={{ color: "hsl(161 52% 38%)" }}
                   />
                   {item}
                 </div>
@@ -548,28 +656,76 @@ function HeroSection() {
 
           {/* Right — dashboard preview */}
           <motion.div
-            {...(shouldReduce
+            {...(reduced
               ? {}
               : {
-                  initial: { opacity: 0, x: 20, scale: 0.98 },
+                  initial: { opacity: 0, x: 24, scale: 0.98 },
                   animate: { opacity: 1, x: 0, scale: 1 },
-                  transition: { duration: 0.65, delay: 0.15, ease: EASE },
+                  transition: { duration: 0.65, delay: 0.12, ease: EASE_OUT },
                 })}
-            className="w-full"
+            className="relative w-full"
           >
-            {/* Glow behind preview */}
+            {/* Ambient glow */}
             <div
-              className="absolute -inset-8 rounded-3xl pointer-events-none"
+              className="absolute -inset-10 pointer-events-none"
               style={{
                 background:
-                  "radial-gradient(ellipse 70% 60% at 50% 50%, hsl(161 50% 40% / 0.07) 0%, transparent 70%)",
+                  "radial-gradient(ellipse 80% 70% at 50% 50%, hsl(161 52% 38% / 0.1) 0%, transparent 70%)",
               }}
               aria-hidden="true"
             />
+
+            {/* Floating chip — top */}
+            <motion.div
+              {...(reduced
+                ? {}
+                : {
+                    initial: { opacity: 0, y: 10 },
+                    animate: { opacity: 1, y: 0 },
+                    transition: { duration: 0.5, delay: 0.55, ease: EASE_OUT },
+                  })}
+              className="absolute -top-4 right-6 z-10 flex items-center gap-2 bg-white border border-slate-200/80 rounded-full px-3 py-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]"
+              aria-hidden="true"
+            >
+              <div
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: "hsl(161 52% 38%)" }}
+              />
+              <span className="text-[11.5px] font-semibold text-slate-700">Sistem Aktif</span>
+            </motion.div>
+
+            {/* Floating chip — bottom */}
+            <motion.div
+              {...(reduced
+                ? {}
+                : {
+                    initial: { opacity: 0, y: -10 },
+                    animate: { opacity: 1, y: 0 },
+                    transition: { duration: 0.5, delay: 0.65, ease: EASE_OUT },
+                  })}
+              className="absolute -bottom-4 left-6 z-10 flex items-center gap-2 bg-white border border-slate-200/80 rounded-full px-3 py-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]"
+              aria-hidden="true"
+            >
+              <Clock
+                className="w-3 h-3"
+                style={{ color: "hsl(161 52% 38%)" }}
+              />
+              <span className="text-[11.5px] font-semibold text-slate-700">Diperbarui real-time</span>
+            </motion.div>
+
             <DashboardPreview stats={stats} loading={isLoading} />
           </motion.div>
         </div>
       </div>
+
+      {/* Bottom fade */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-24 pointer-events-none"
+        style={{
+          background: "linear-gradient(to bottom, transparent, white)",
+        }}
+        aria-hidden="true"
+      />
     </section>
   );
 }
@@ -577,37 +733,38 @@ function HeroSection() {
 // ─── Marquee Ticker ───────────────────────────────────────────────────────────
 
 function MarqueeTicker() {
-  const doubledItems = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS];
+  const doubled = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS];
+  const reduced = useReducedMotion();
 
   return (
-    <div className="bg-slate-900 border-y border-slate-800 py-4 overflow-hidden relative">
-      {/* Left fade */}
+    <div
+      className="relative py-3.5 overflow-hidden border-y border-slate-200/60"
+      style={{ background: "hsl(161 52% 26%)" }}
+      aria-hidden="true"
+    >
+      {/* Fades */}
       <div
-        className="absolute left-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
-        style={{ background: "linear-gradient(to right, #0f172a, transparent)" }}
-        aria-hidden="true"
+        className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
+        style={{ background: "linear-gradient(to right, hsl(161 52% 26%), transparent)" }}
       />
-      {/* Right fade */}
       <div
-        className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
-        style={{ background: "linear-gradient(to left, #0f172a, transparent)" }}
-        aria-hidden="true"
+        className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
+        style={{ background: "linear-gradient(to left, hsl(161 52% 26%), transparent)" }}
       />
 
       <motion.div
-        animate={{ x: ["0%", "-50%"] }}
-        transition={{ duration: 32, repeat: Infinity, ease: "linear" }}
-        className="flex items-center gap-0 whitespace-nowrap"
-        aria-hidden="true"
+        animate={reduced ? {} : { x: ["0%", "-50%"] }}
+        transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
+        className="flex items-center whitespace-nowrap"
       >
-        {doubledItems.map((item, i) => (
-          <div key={i} className="flex items-center gap-6 px-6">
-            <span className="text-[12px] font-semibold text-slate-400 tracking-wide uppercase">
+        {doubled.map((item, i) => (
+          <div key={i} className="flex items-center gap-5 px-5">
+            <span className="text-[11.5px] font-semibold text-white/70 tracking-[0.06em] uppercase">
               {item}
             </span>
-            <span
-              className="w-1 h-1 rounded-full flex-shrink-0"
-              style={{ background: "hsl(161 50% 45%)" }}
+            <div
+              className="w-[3px] h-[3px] rounded-full shrink-0"
+              style={{ background: "rgba(255,255,255,0.35)" }}
             />
           </div>
         ))}
@@ -616,53 +773,55 @@ function MarqueeTicker() {
   );
 }
 
-// ─── Stats Bar ────────────────────────────────────────────────────────────────
+// ─── Stats ────────────────────────────────────────────────────────────────────
 
-function StatsBar() {
+function StatsSection() {
   const { data: stats, isLoading } = useLandingStats();
-  const shouldReduce = useReducedMotion();
+  const reduced = useReducedMotion();
 
   const items = [
-    { label: "Total Koleksi Buku", value: stats?.totalBooks, icon: BookOpen },
+    { label: "Total Koleksi Buku", value: stats?.totalBooks, icon: BookMarked },
     { label: "Anggota Terdaftar", value: stats?.totalMembers, icon: Users },
     { label: "Total Peminjaman", value: stats?.totalBorrowings, icon: ArrowLeftRight },
     { label: "Buku Tersedia", value: stats?.availableBooks, icon: CheckCircle2 },
   ];
 
   return (
-    <section className="bg-white border-b border-slate-100">
+    <section className="border-b border-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-slate-100">
           {items.map(({ label, value, icon: Icon }, i) => (
             <motion.div
               key={label}
-              {...(shouldReduce ? {} : fadeUpInView(i * 0.08))}
-              className="py-10 px-6 lg:px-8 relative group"
+              {...fadeUpView(i * 0.07, reduced ?? false)}
+              className="group relative py-9 px-6 lg:px-8"
             >
-              {/* Subtle hover tint */}
-              <div className="absolute inset-0 bg-primary/[0.025] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+              <div
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+                style={{ background: "hsl(161 52% 26% / 0.025)" }}
+              />
               <div className="relative">
-                <div className="flex items-center gap-2 mb-3">
-                  <Icon
-                    className="w-4 h-4 text-primary/60"
-                    strokeWidth={1.75}
-                    aria-hidden="true"
-                  />
-                </div>
+                <Icon
+                  className="w-4 h-4 mb-3"
+                  strokeWidth={1.75}
+                  style={{ color: "hsl(161 52% 38%)" }}
+                />
                 {isLoading ? (
-                  <div
-                    className="h-8 w-16 bg-slate-200 rounded-lg animate-pulse mb-2"
-                    aria-hidden="true"
-                  />
+                  <Sk w="w-16" h="h-8" />
                 ) : (
-                  <p className="text-3xl font-extrabold text-slate-900 tabular-nums tracking-tight">
+                  <p className="text-[2rem] font-extrabold text-slate-900 tabular-nums tracking-tight leading-none">
                     {fmt(value ?? 0)}
                     {(value ?? 0) > 0 && (
-                      <span className="text-primary ml-0.5">+</span>
+                      <span
+                        className="text-base font-bold ml-0.5"
+                        style={{ color: "hsl(161 52% 38%)" }}
+                      >
+                        +
+                      </span>
                     )}
                   </p>
                 )}
-                <p className="mt-1.5 text-sm text-slate-500 font-medium leading-snug">{label}</p>
+                <p className="mt-2 text-[13px] text-slate-500 font-medium">{label}</p>
               </div>
             </motion.div>
           ))}
@@ -675,110 +834,128 @@ function StatsBar() {
 // ─── How It Works ─────────────────────────────────────────────────────────────
 
 function HowItWorksSection() {
-  const shouldReduce = useReducedMotion();
+  const reduced = useReducedMotion();
 
   return (
-    <section id="how" className="relative py-20 sm:py-28 bg-slate-50 border-b border-slate-100 overflow-hidden">
-      {/* Background decoration */}
+    <section
+      id="how"
+      className="relative py-24 sm:py-32 overflow-hidden"
+      style={{ background: "#f8f9fa" }}
+    >
+      {/* Subtle grid */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        <svg className="absolute inset-0 w-full h-full opacity-[0.025]">
+        <svg className="absolute inset-0 w-full h-full opacity-[0.022]">
           <defs>
             <pattern id="how-grid" x="0" y="0" width="48" height="48" patternUnits="userSpaceOnUse">
-              <path d="M 48 0 L 0 0 0 48" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-slate-900" />
+              <path
+                d="M 48 0 L 0 0 0 48"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="0.5"
+                className="text-slate-900"
+              />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#how-grid)" />
         </svg>
-        {/* Large decorative text */}
+        {/* Radial accent */}
         <div
-          className="absolute -bottom-2 left-1/2 -translate-x-1/2 font-black text-slate-900/[0.025] leading-none whitespace-nowrap select-none tracking-tighter"
-          style={{ fontSize: "clamp(80px, 16vw, 180px)" }}
-        >
-          HANZOFFICIAL
-        </div>
+          className="absolute top-0 right-0 w-[500px] h-[500px]"
+          style={{
+            background:
+              "radial-gradient(ellipse at 100% 0%, hsl(161 52% 30% / 0.06) 0%, transparent 60%)",
+          }}
+        />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section header */}
+        {/* Header */}
         <motion.div
-          {...(shouldReduce ? {} : fadeUpInView(0))}
+          {...fadeUpView(0, reduced ?? false)}
           className="max-w-xl mb-16"
         >
-          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">
+          <p
+            className="text-[11.5px] font-bold uppercase tracking-[0.1em] mb-3"
+            style={{ color: "hsl(161 52% 32%)" }}
+          >
             Cara Kerja
           </p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight font-sans leading-tight">
-            Mulai Gunakan dalam
+          <h2 className="text-[2rem] sm:text-[2.5rem] font-extrabold text-slate-900 tracking-[-0.025em] leading-[1.1]">
+            Mulai Digunakan dalam
             <br />
-            Tiga Langkah Mudah
+            Tiga Langkah
           </h2>
-          <p className="mt-4 text-base text-slate-500 leading-relaxed">
+          <p className="mt-4 text-[15px] text-slate-500 leading-relaxed">
             Tidak perlu pelatihan teknis. VIREON dirancang agar langsung bisa
             digunakan oleh pengelola perpustakaan sekolah mana pun.
           </p>
         </motion.div>
 
         {/* Steps */}
-        <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
-          {/* Connecting line (desktop only) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 relative">
+          {/* Connector (desktop) */}
           <div
-            className="hidden md:block absolute top-[2.75rem] left-[calc(16.67%+1.5rem)] right-[calc(16.67%+1.5rem)] h-px pointer-events-none"
+            className="hidden md:block absolute top-[26px] left-[calc(33.33%_-_12px)] right-[calc(33.33%_-_12px)] h-[1px]"
             aria-hidden="true"
             style={{
               background:
-                "linear-gradient(to right, transparent, hsl(161 50% 40% / 0.3) 25%, hsl(161 50% 40% / 0.3) 75%, transparent)",
+                "linear-gradient(to right, transparent, hsl(161 52% 36% / 0.35) 25%, hsl(161 52% 36% / 0.35) 75%, transparent)",
             }}
           />
 
           {HOW_STEPS.map(({ icon: Icon, num, title, desc }, i) => (
             <motion.div
               key={title}
-              {...(shouldReduce ? {} : fadeUpInView(i * 0.12))}
-              className="relative flex flex-col"
+              {...fadeUpView(i * 0.12, reduced ?? false)}
+              className="flex flex-col"
             >
-              {/* Step number circle */}
-              <div className="relative mb-6 flex items-center gap-4">
-                <div className="w-11 h-11 rounded-2xl bg-white border-2 border-primary/20 shadow-sm flex items-center justify-center flex-shrink-0 relative">
+              <div className="flex items-center gap-4 mb-5">
+                <div
+                  className="w-[52px] h-[52px] rounded-2xl flex items-center justify-center shrink-0 relative"
+                  style={{
+                    background: "white",
+                    border: "1.5px solid hsl(161 52% 36% / 0.25)",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 0 0 4px hsl(161 52% 36% / 0.06)",
+                  }}
+                >
                   <Icon
-                    className="w-5 h-5 text-primary"
+                    className="w-5 h-5"
                     strokeWidth={1.75}
-                    aria-hidden="true"
+                    style={{ color: "hsl(161 52% 30%)" }}
                   />
-                  {/* Number badge */}
                   <div
-                    className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-sm"
+                    className="absolute -top-2 -right-2 w-[18px] h-[18px] rounded-full flex items-center justify-center"
+                    style={{ background: "hsl(161 52% 26%)" }}
                   >
                     <span className="text-[9px] font-bold text-white">{i + 1}</span>
                   </div>
                 </div>
                 <span
-                  className="text-[52px] font-black leading-none select-none"
-                  style={{ color: "hsl(161 50% 40% / 0.1)", letterSpacing: "-0.05em" }}
+                  className="text-[44px] font-black leading-none tracking-[-0.06em] select-none"
+                  style={{ color: "hsl(161 52% 26% / 0.1)" }}
                   aria-hidden="true"
                 >
                   {num}
                 </span>
               </div>
-              <h3 className="text-[17px] font-bold text-slate-900 mb-2 font-sans">{title}</h3>
-              <p className="text-sm text-slate-500 leading-relaxed flex-1">{desc}</p>
+              <h3 className="text-[16px] font-bold text-slate-900 mb-2 tracking-tight">{title}</h3>
+              <p className="text-[14px] text-slate-500 leading-relaxed">{desc}</p>
             </motion.div>
           ))}
         </div>
 
-        {/* Bottom CTA nudge */}
+        {/* Bottom CTA */}
         <motion.div
-          {...(shouldReduce ? {} : fadeUpInView(0.3))}
-          className="mt-14 flex justify-center"
+          {...fadeUpView(0.36, reduced ?? false)}
+          className="mt-16 flex justify-start"
         >
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 transition-colors group"
+            className="inline-flex items-center gap-2 text-[13.5px] font-semibold group"
+            style={{ color: "hsl(161 52% 26%)" }}
           >
-            Mulai sekarang, gratis
-            <ArrowRight
-              className="w-4 h-4 group-hover:translate-x-0.5 transition-transform"
-              aria-hidden="true"
-            />
+            Mulai sekarang
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-150" />
           </Link>
         </motion.div>
       </div>
@@ -787,83 +964,132 @@ function HowItWorksSection() {
 }
 
 // ─── Features ─────────────────────────────────────────────────────────────────
+// Bento grid: alternating wide/narrow cards for visual variety.
 
 function FeaturesSection() {
-  const shouldReduce = useReducedMotion();
+  const reduced = useReducedMotion();
 
   return (
-    <section id="features" className="relative py-20 sm:py-28 bg-white overflow-hidden">
-      {/* Subtle right-side radial */}
+    <section id="features" className="relative py-24 sm:py-32 bg-white overflow-hidden">
+      {/* Decorative radial */}
       <div
-        className="absolute top-0 right-0 w-[600px] h-[600px] pointer-events-none"
+        className="absolute -top-24 left-1/2 -translate-x-1/2 w-[800px] h-[600px] pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse at 100% 0%, hsl(161 50% 40% / 0.05) 0%, transparent 65%)",
+            "radial-gradient(ellipse at 50% 0%, hsl(161 52% 30% / 0.05) 0%, transparent 60%)",
         }}
         aria-hidden="true"
       />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section header */}
+        {/* Header */}
         <motion.div
-          {...(shouldReduce ? {} : fadeUpInView(0))}
+          {...fadeUpView(0, reduced ?? false)}
           className="max-w-xl mb-14"
         >
-          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">
+          <p
+            className="text-[11.5px] font-bold uppercase tracking-[0.1em] mb-3"
+            style={{ color: "hsl(161 52% 32%)" }}
+          >
             Fitur Lengkap
           </p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight font-sans leading-tight">
+          <h2 className="text-[2rem] sm:text-[2.5rem] font-extrabold text-slate-900 tracking-[-0.025em] leading-[1.1]">
             Semua yang Anda Butuhkan
             <br />
             dalam Satu Platform
           </h2>
-          <p className="mt-4 text-base text-slate-500 leading-relaxed">
-            VIREON dirancang untuk menutupi seluruh siklus operasional
-            perpustakaan sekolah — dari pengelolaan koleksi hingga pelaporan
-            akhir tahun.
+          <p className="mt-4 text-[15px] text-slate-500 leading-relaxed">
+            VIREON mencakup seluruh siklus operasional perpustakaan sekolah — dari
+            pengelolaan koleksi hingga pelaporan akhir tahun.
           </p>
         </motion.div>
 
-        {/* Feature grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {/* Bento grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
           {FEATURES.map((feature, i) => {
             const Icon = feature.icon;
+            const isWide = feature.span === "lg:col-span-2";
+
             return (
               <motion.div
                 key={feature.title}
-                {...(shouldReduce
+                {...(reduced
                   ? {}
                   : {
-                      ...fadeUpInView(i * 0.07),
-                      whileHover: { y: -4, transition: { duration: 0.2 } },
+                      ...fadeUpView(i * 0.06),
+                      whileHover: { y: -3, transition: { duration: 0.18, ease: "easeOut" } },
                     })}
-                className="group relative bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm hover:shadow-lg hover:border-primary/25 transition-all duration-300 cursor-default overflow-hidden"
+                className={`group relative rounded-2xl p-6 border overflow-hidden cursor-default ${
+                  feature.accent
+                    ? "border-transparent"
+                    : "border-slate-200/70 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+                } hover:shadow-[0_8px_28px_rgba(0,0,0,0.08)] hover:border-[hsl(161_52%_36%/0.3)] transition-all duration-300 ${feature.span}`}
+                style={
+                  feature.accent
+                    ? {
+                        background:
+                          "linear-gradient(140deg, hsl(161 52% 26% / 0.06) 0%, hsl(161 52% 26% / 0.02) 100%)",
+                        border: "1px solid hsl(161 52% 36% / 0.18)",
+                      }
+                    : {}
+                }
               >
-                {/* Hover accent line */}
-                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-primary/0 via-primary to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                {/* Number */}
+                {/* Top accent line on hover */}
                 <div
-                  className="absolute top-4 right-5 text-[32px] font-black leading-none select-none transition-opacity duration-300 group-hover:opacity-60"
-                  style={{ color: "hsl(161 50% 40% / 0.07)", letterSpacing: "-0.04em" }}
+                  className="absolute inset-x-0 top-0 h-[1.5px] opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  style={{
+                    background:
+                      "linear-gradient(to right, transparent, hsl(161 52% 36% / 0.6) 40%, hsl(161 52% 36% / 0.6) 60%, transparent)",
+                  }}
+                  aria-hidden="true"
+                />
+
+                {/* Large decorative num */}
+                <div
+                  className="absolute top-4 right-5 text-[36px] font-black leading-none select-none opacity-[0.07] tracking-[-0.05em]"
+                  style={{ color: "hsl(161 52% 26%)" }}
                   aria-hidden="true"
                 >
                   {feature.num}
                 </div>
 
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4 transition-colors duration-200 flex-shrink-0"
-                  style={{ background: "hsl(161 50% 40% / 0.08)", border: "1px solid hsl(161 50% 40% / 0.15)" }}
+                {/* Icon */}
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center mb-5 shrink-0"
+                  style={{
+                    background: "hsl(161 52% 26% / 0.09)",
+                    border: "1px solid hsl(161 52% 36% / 0.18)",
+                  }}
                 >
                   <Icon
-                    className="w-5 h-5 text-primary"
+                    className="w-[18px] h-[18px]"
                     strokeWidth={1.75}
-                    aria-hidden="true"
+                    style={{ color: "hsl(161 52% 28%)" }}
                   />
                 </div>
-                <h3 className="text-[15px] font-semibold text-slate-900 mb-2 font-sans">
+
+                <h3 className="text-[15px] font-bold text-slate-900 mb-2 tracking-tight">
                   {feature.title}
                 </h3>
-                <p className="text-sm text-slate-500 leading-relaxed">{feature.desc}</p>
+                <p className="text-[13.5px] text-slate-500 leading-relaxed">
+                  {feature.desc}
+                </p>
+
+                {/* Wide card extra indicator */}
+                {isWide && (
+                  <div className="mt-5 pt-4 border-t border-slate-100 flex items-center gap-1.5">
+                    <span
+                      className="text-[12px] font-semibold"
+                      style={{ color: "hsl(161 52% 30%)" }}
+                    >
+                      Lihat demo
+                    </span>
+                    <ArrowRight
+                      className="w-3 h-3 group-hover:translate-x-0.5 transition-transform duration-150"
+                      style={{ color: "hsl(161 52% 30%)" }}
+                    />
+                  </div>
+                )}
               </motion.div>
             );
           })}
@@ -873,98 +1099,118 @@ function FeaturesSection() {
   );
 }
 
-// ─── Benefits ─────────────────────────────────────────────────────────────────
+// ─── About / Benefits ─────────────────────────────────────────────────────────
 
-function BenefitsSection() {
-  const shouldReduce = useReducedMotion();
+function AboutSection() {
+  const reduced = useReducedMotion();
+
+  const points = [
+    {
+      icon: Zap,
+      title: "Dirancang untuk Kecepatan",
+      desc: "Alur kerja yang meminimalkan langkah. Dari input buku hingga cetak laporan — semua dalam hitungan detik.",
+    },
+    {
+      icon: Layers,
+      title: "Terintegrasi Penuh",
+      desc: "Semua modul terhubung. Perubahan di satu bagian langsung tercermin di seluruh sistem secara otomatis.",
+    },
+    {
+      icon: RefreshCw,
+      title: "Data Selalu Terkini",
+      desc: "Sinkronisasi real-time memastikan informasi yang Anda lihat selalu mencerminkan kondisi perpustakaan terkini.",
+    },
+  ];
 
   return (
     <section
       id="about"
-      className="relative py-20 sm:py-28 overflow-hidden"
-      style={{ background: "linear-gradient(160deg, hsl(161 50% 40% / 0.04) 0%, #f8fafc 40%, #f8fafc 100%)" }}
+      className="relative py-24 sm:py-32 overflow-hidden"
+      style={{ background: "#f8f9fa" }}
     >
-      {/* Background decoration */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        <div
-          className="absolute top-0 left-0 right-0 h-px"
-          style={{ background: "linear-gradient(to right, transparent, hsl(161 50% 40% / 0.2) 50%, transparent)" }}
-        />
-        <div
-          className="absolute -left-20 top-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full"
-          style={{ background: "radial-gradient(circle, hsl(161 50% 40% / 0.08) 0%, transparent 70%)" }}
-        />
-        <div
-          className="absolute -bottom-4 left-1/2 -translate-x-1/2 font-black text-slate-900/[0.025] leading-none whitespace-nowrap select-none tracking-tighter"
-          style={{ fontSize: "clamp(60px, 12vw, 140px)" }}
-        >
-          VIREON
-        </div>
-      </div>
+      {/* Top border accent */}
+      <div
+        className="absolute inset-x-0 top-0 h-px"
+        style={{
+          background:
+            "linear-gradient(to right, transparent, hsl(161 52% 36% / 0.25) 40%, hsl(161 52% 36% / 0.25) 60%, transparent)",
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Radial accent */}
+      <div
+        className="absolute -left-32 top-1/2 -translate-y-1/2 w-[500px] h-[500px] pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(circle, hsl(161 52% 30% / 0.06) 0%, transparent 65%)",
+        }}
+        aria-hidden="true"
+      />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
 
           {/* Left — text */}
-          <div>
-            <motion.div {...(shouldReduce ? {} : fadeUpInView(0))}>
-              <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">
-                Mengapa VIREON
-              </p>
-              <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight font-sans leading-tight mb-5">
-                Dirancang untuk
-                <br />
-                Kemudahan Sehari-hari
-              </h2>
-              <p className="text-base text-slate-500 leading-relaxed mb-8">
-                Kami memahami tantangan pengelola perpustakaan sekolah. VIREON
-                hadir sebagai solusi yang sederhana, andal, dan tidak memerlukan
-                keahlian teknis khusus.
-              </p>
-            </motion.div>
-
-            <motion.div
-              {...(shouldReduce ? {} : fadeUpInView(0.1))}
+          <motion.div {...fadeUpView(0, reduced ?? false)}>
+            <p
+              className="text-[11.5px] font-bold uppercase tracking-[0.1em] mb-3"
+              style={{ color: "hsl(161 52% 32%)" }}
             >
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-2 px-5 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all shadow-md shadow-primary/20 min-h-[44px]"
-              >
-                Coba Sekarang
-                <ArrowRight className="w-4 h-4" aria-hidden="true" />
-              </Link>
-            </motion.div>
-          </div>
+              Mengapa VIREON
+            </p>
+            <h2 className="text-[2rem] sm:text-[2.5rem] font-extrabold text-slate-900 tracking-[-0.025em] leading-[1.1] mb-5">
+              Dirancang untuk
+              <br />
+              Kemudahan Sehari-hari
+            </h2>
+            <p className="text-[15px] text-slate-500 leading-relaxed mb-8">
+              Kami memahami tantangan pengelola perpustakaan sekolah. VIREON hadir
+              sebagai solusi yang sederhana, andal, dan tidak memerlukan keahlian
+              teknis khusus.
+            </p>
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 px-5 py-3 text-[14px] font-semibold text-white rounded-[10px] transition-all duration-150 active:scale-[0.98] min-h-[44px]"
+              style={{
+                background: "hsl(161 52% 26%)",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.2), 0 0 0 1px hsl(161 52% 20% / 0.5)",
+              }}
+            >
+              Coba Sekarang
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </motion.div>
 
           {/* Right — benefit cards */}
-          <div className="space-y-4">
-            {BENEFITS.map(({ icon: Icon, title, desc }, i) => (
+          <div className="space-y-3.5">
+            {points.map(({ icon: Icon, title, desc }, i) => (
               <motion.div
                 key={title}
-                {...(shouldReduce
+                {...(reduced
                   ? {}
                   : {
-                      ...fadeUpInView(i * 0.1),
-                      whileHover: { x: 4, transition: { duration: 0.2 } },
+                      ...fadeUpView(i * 0.1),
+                      whileHover: { x: 3, transition: { duration: 0.18 } },
                     })}
-                className="group flex items-start gap-5 p-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-200"
+                className="group flex items-start gap-4 p-5 bg-white rounded-2xl border border-slate-200/70 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.07)] hover:border-[hsl(161_52%_36%/0.25)] transition-all duration-200"
               >
                 <div
-                  className="w-11 h-11 rounded-xl flex-shrink-0 flex items-center justify-center mt-0.5 group-hover:scale-105 transition-transform duration-200"
+                  className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center mt-0.5"
                   style={{
-                    background: "linear-gradient(135deg, hsl(161 50% 40% / 0.1) 0%, hsl(161 50% 40% / 0.05) 100%)",
-                    border: "1px solid hsl(161 50% 40% / 0.2)",
+                    background: "hsl(161 52% 26% / 0.08)",
+                    border: "1px solid hsl(161 52% 36% / 0.2)",
                   }}
                 >
                   <Icon
-                    className="w-5 h-5 text-primary"
+                    className="w-[18px] h-[18px]"
                     strokeWidth={1.75}
-                    aria-hidden="true"
+                    style={{ color: "hsl(161 52% 28%)" }}
                   />
                 </div>
                 <div>
-                  <h3 className="text-[15px] font-semibold text-slate-900 mb-1.5 font-sans">{title}</h3>
-                  <p className="text-sm text-slate-500 leading-relaxed">{desc}</p>
+                  <h3 className="text-[15px] font-bold text-slate-900 mb-1.5 tracking-tight">{title}</h3>
+                  <p className="text-[13.5px] text-slate-500 leading-relaxed">{desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -978,14 +1224,17 @@ function BenefitsSection() {
 // ─── CTA ──────────────────────────────────────────────────────────────────────
 
 function CTASection() {
-  const shouldReduce = useReducedMotion();
+  const reduced = useReducedMotion();
 
   return (
-    <section className="relative py-20 sm:py-28 bg-slate-900 overflow-hidden">
-      {/* Rich background layers */}
+    <section
+      className="relative py-24 sm:py-32 overflow-hidden"
+      style={{ background: "hsl(220 40% 6%)" }}
+    >
+      {/* Background layers */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         {/* Grid */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.04]">
+        <svg className="absolute inset-0 w-full h-full opacity-[0.03]">
           <defs>
             <pattern id="cta-grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
               <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
@@ -993,69 +1242,66 @@ function CTASection() {
           </defs>
           <rect width="100%" height="100%" fill="url(#cta-grid)" />
         </svg>
-        {/* Primary orb left */}
+
+        {/* Left orb */}
         <div
-          className="absolute -left-24 top-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full"
-          style={{ background: "radial-gradient(circle, hsl(161 50% 40% / 0.22) 0%, transparent 65%)" }}
+          className="absolute -left-32 top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full"
+          style={{ background: "radial-gradient(circle, hsl(161 52% 36% / 0.22) 0%, transparent 60%)" }}
         />
-        {/* Accent orb right */}
+        {/* Right orb */}
         <div
-          className="absolute -right-24 top-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full"
-          style={{ background: "radial-gradient(circle, hsl(161 50% 40% / 0.14) 0%, transparent 65%)" }}
+          className="absolute -right-32 top-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full"
+          style={{ background: "radial-gradient(circle, hsl(161 52% 36% / 0.14) 0%, transparent 65%)" }}
         />
-        {/* Horizontal accent lines */}
+
+        {/* Top separator */}
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        {/* Bottom separator */}
         <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-        {/* Large decorative text */}
-        <div
-          className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 font-black text-white/[0.025] leading-none whitespace-nowrap select-none tracking-tighter"
-          style={{ fontSize: "clamp(80px, 18vw, 200px)" }}
-        >
-          MULAI
-        </div>
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
-          {...(shouldReduce ? {} : fadeUpInView(0))}
+          {...fadeUpView(0, reduced ?? false)}
           className="max-w-2xl mx-auto text-center"
         >
-          {/* Label */}
+          {/* Badge */}
           <div
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wider mb-6"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.08em] mb-8"
             style={{
-              background: "hsl(161 50% 40% / 0.15)",
-              border: "1px solid hsl(161 50% 40% / 0.3)",
-              color: "hsl(161 50% 65%)",
+              background: "hsl(161 52% 36% / 0.14)",
+              border: "1px solid hsl(161 52% 50% / 0.25)",
+              color: "hsl(161 52% 65%)",
             }}
           >
             <span
               className="w-1.5 h-1.5 rounded-full animate-pulse"
-              style={{ background: "hsl(161 50% 60%)" }}
+              style={{ background: "hsl(161 52% 60%)" }}
             />
             Siap Digunakan Sekarang
           </div>
 
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight font-sans leading-tight mb-5">
-            Siap Mengubah Cara Anda
+          <h2 className="text-[2.5rem] sm:text-[3rem] lg:text-[3.5rem] font-extrabold text-white tracking-[-0.03em] leading-[1.05] mb-5">
+            Siap Mengubah Cara
             <br />
             Mengelola Perpustakaan?
           </h2>
-          <p className="text-base text-slate-400 leading-relaxed mb-8">
-            Mulai gunakan VIREON hari ini. Tidak perlu instalasi rumit, tidak
-            perlu konfigurasi panjang — cukup masuk dan mulai bekerja.
+          <p className="text-[15px] text-white/50 leading-relaxed mb-10 max-w-lg mx-auto">
+            Tidak perlu instalasi rumit, tidak perlu konfigurasi panjang — cukup
+            masuk dan mulai bekerja.
           </p>
+
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 px-6 py-3.5 bg-white text-slate-900 text-sm font-semibold rounded-xl hover:bg-slate-100 active:scale-[0.98] transition-all shadow-sm min-h-[44px]"
+              className="inline-flex items-center gap-2 px-6 py-3.5 bg-white text-slate-900 text-[14px] font-semibold rounded-[10px] hover:bg-slate-50 active:scale-[0.98] transition-all shadow-[0_0_0_1px_rgba(255,255,255,0.1)] min-h-[44px]"
             >
               Masuk ke VIREON
-              <ChevronRight className="w-4 h-4" aria-hidden="true" />
+              <ChevronRight className="w-4 h-4" />
             </Link>
             <button
               onClick={() => scrollTo("features")}
-              className="inline-flex items-center gap-2 px-6 py-3.5 text-sm font-medium text-slate-400 border border-slate-700 rounded-xl hover:border-slate-500 hover:text-slate-300 active:scale-[0.98] transition-all min-h-[44px]"
+              className="inline-flex items-center gap-2 px-6 py-3.5 text-[14px] font-medium text-white/60 border border-white/10 rounded-[10px] hover:border-white/20 hover:text-white/80 active:scale-[0.98] transition-all min-h-[44px]"
             >
               Pelajari Fitur
             </button>
@@ -1069,51 +1315,47 @@ function CTASection() {
 // ─── Footer ───────────────────────────────────────────────────────────────────
 
 function LandingFooter() {
+  const year = new Date().getFullYear();
+
   return (
-    <footer className="bg-white">
-      {/* Top accent line */}
-      <div
-        className="h-[3px] w-full"
-        style={{
-          background: "linear-gradient(to right, transparent, hsl(161 50% 40% / 0.6) 30%, hsl(161 50% 40%) 50%, hsl(161 50% 40% / 0.6) 70%, transparent)",
-        }}
-      />
-
+    <footer className="bg-white border-t border-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-14">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
 
-          {/* Brand — wider column */}
+          {/* Brand */}
           <div className="md:col-span-5">
             <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 ring-1 ring-slate-200/80">
+              <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 ring-1 ring-slate-200/70">
                 <img
                   src={VIREON_LOGO}
-                  alt="Vireon Logo"
+                  alt="VIREON"
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />
               </div>
-              <div className="flex flex-col leading-none gap-0.5">
-                <span className="text-[13px] font-bold text-slate-900 tracking-[0.06em]">VIREON</span>
-                <span className="text-[9px] font-medium text-slate-400 uppercase tracking-[0.12em]">
+              <div className="leading-none">
+                <div className="text-[13px] font-bold text-slate-900 tracking-[0.05em]">
+                  VIREON
+                </div>
+                <div className="text-[9.5px] font-medium text-slate-400 uppercase tracking-[0.14em] mt-0.5">
                   Library System
-                </span>
+                </div>
               </div>
             </div>
-            <p className="text-sm text-slate-500 leading-relaxed max-w-[260px] mb-5">
-              Sistem manajemen perpustakaan modern untuk sekolah. Sederhana,
+            <p className="text-[13.5px] text-slate-500 leading-relaxed max-w-[280px] mb-5">
+              Sistem manajemen perpustakaan digital untuk sekolah. Sederhana,
               cepat, dan terpercaya.
             </p>
-            {/* Feature badges */}
-            <div className="flex flex-wrap gap-2">
+            {/* Module tags */}
+            <div className="flex flex-wrap gap-1.5">
               {["Koleksi", "Anggota", "Peminjaman", "Laporan"].map((tag) => (
                 <span
                   key={tag}
-                  className="text-[10px] font-medium px-2.5 py-1 rounded-full"
+                  className="text-[10.5px] font-medium px-2.5 py-0.5 rounded-full"
                   style={{
-                    background: "hsl(161 50% 40% / 0.07)",
-                    border: "1px solid hsl(161 50% 40% / 0.18)",
-                    color: "hsl(161 50% 35%)",
+                    background: "hsl(161 52% 26% / 0.07)",
+                    border: "1px solid hsl(161 52% 36% / 0.18)",
+                    color: "hsl(161 52% 32%)",
                   }}
                 >
                   {tag}
@@ -1122,21 +1364,21 @@ function LandingFooter() {
             </div>
           </div>
 
-          {/* Product links */}
+          {/* Navigation links */}
           <div className="md:col-span-3">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">
-              Produk
+            <h3 className="text-[11px] font-bold text-slate-900 uppercase tracking-[0.08em] mb-4">
+              Navigasi
             </h3>
             <ul className="space-y-3">
               {[
-                { label: "Cara Kerja", action: () => scrollTo("how") },
-                { label: "Fitur", action: () => scrollTo("features") },
-                { label: "Tentang", action: () => scrollTo("about") },
-              ].map(({ label, action }) => (
+                { label: "Cara Kerja", id: "how" },
+                { label: "Fitur", id: "features" },
+                { label: "Tentang", id: "about" },
+              ].map(({ label, id }) => (
                 <li key={label}>
                   <button
-                    onClick={action}
-                    className="text-sm text-slate-500 hover:text-slate-900 transition-colors"
+                    onClick={() => scrollTo(id)}
+                    className="text-[13.5px] text-slate-500 hover:text-slate-900 transition-colors duration-150"
                   >
                     {label}
                   </button>
@@ -1145,7 +1387,7 @@ function LandingFooter() {
               <li>
                 <Link
                   href="/login"
-                  className="text-sm text-slate-500 hover:text-slate-900 transition-colors"
+                  className="text-[13.5px] text-slate-500 hover:text-slate-900 transition-colors duration-150"
                 >
                   Masuk
                 </Link>
@@ -1155,30 +1397,35 @@ function LandingFooter() {
 
           {/* Info */}
           <div className="md:col-span-4">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">
+            <h3 className="text-[11px] font-bold text-slate-900 uppercase tracking-[0.08em] mb-4">
               Informasi
             </h3>
             <ul className="space-y-3">
               <li>
-                <p className="text-sm text-slate-500">Dikembangkan untuk</p>
-                <p className="text-sm font-semibold text-slate-800 mt-0.5">SMKN 2 Lubuk Basung</p>
+                <p className="text-[13px] text-slate-400">Dikembangkan untuk</p>
+                <p className="text-[13.5px] font-semibold text-slate-700 mt-0.5">
+                  SMKN 2 Lubuk Basung
+                </p>
               </li>
               <li>
-                <p className="text-sm text-slate-500">Sumatera Barat, Indonesia</p>
+                <p className="text-[13.5px] text-slate-500">Sumatera Barat, Indonesia</p>
               </li>
               <li>
                 <div
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                   style={{
-                    background: "hsl(161 50% 40% / 0.07)",
-                    border: "1px solid hsl(161 50% 40% / 0.18)",
+                    background: "hsl(161 52% 26% / 0.07)",
+                    border: "1px solid hsl(161 52% 36% / 0.18)",
                   }}
                 >
                   <div
                     className="w-1.5 h-1.5 rounded-full animate-pulse"
-                    style={{ background: "hsl(161 50% 45%)" }}
+                    style={{ background: "hsl(161 52% 44%)" }}
                   />
-                  <span className="text-[10px] font-medium" style={{ color: "hsl(161 50% 35%)" }}>
+                  <span
+                    className="text-[10.5px] font-medium"
+                    style={{ color: "hsl(161 52% 30%)" }}
+                  >
                     Sistem Aktif
                   </span>
                 </div>
@@ -1188,12 +1435,12 @@ function LandingFooter() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-12 pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-slate-400">
-            &copy; {new Date().getFullYear()} Vireon Library System. Hak cipta dilindungi.
+        <div className="mt-12 pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-[12px] text-slate-400">
+            &copy; {year} Vireon Library System. Hak cipta dilindungi.
           </p>
-          <p className="text-xs text-slate-400">
-            Dibangun dengan Supabase &amp; React &mdash; Replit
+          <p className="text-[12px] text-slate-400">
+            Dibangun dengan Supabase &amp; React
           </p>
         </div>
       </div>
@@ -1204,7 +1451,7 @@ function LandingFooter() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
-  // Force light mode on the landing page; restore on unmount
+  // Force light mode on landing; restore on unmount
   useEffect(() => {
     const root = document.documentElement;
     const wasDark = root.classList.contains("dark");
@@ -1220,10 +1467,10 @@ export default function LandingPage() {
       <main>
         <HeroSection />
         <MarqueeTicker />
-        <StatsBar />
+        <StatsSection />
         <HowItWorksSection />
         <FeaturesSection />
-        <BenefitsSection />
+        <AboutSection />
         <CTASection />
       </main>
       <LandingFooter />

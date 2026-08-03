@@ -1,7 +1,8 @@
+import React from "react";
 import { cn } from "@/lib/utils";
 
-export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("shimmer rounded-lg", className)} />;
+export function Skeleton({ className, ...props }: React.ComponentProps<'div'>) {
+  return <div className={cn("shimmer rounded-lg", className)} {...props} />;
 }
 
 /** A single list-row placeholder (members, staff, borrowings). */
