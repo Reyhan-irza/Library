@@ -1,9 +1,9 @@
 {
-  "buildCommand": "pnpm --filter @workspace/perpus-pintar run build",
-  "outputDirectory": "artifacts/perpus-pintar/dist",
-  "installCommand": "pnpm install",
-  "framework": null,
+  "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
+    {
+      "source": "/((?!assets/|.*\\.[^/]+$).*)",
+      "destination": "/index.html"
+    }
   ]
 }

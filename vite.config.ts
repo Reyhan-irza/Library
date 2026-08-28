@@ -14,7 +14,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 const rawPort = process.env.PORT;
 const port = rawPort ? Number(rawPort) : 5173;
 
-// BASE_PATH: '/' untuk Vercel, path artifact untuk Replit dev
+// BASE_PATH can be supplied by a host that mounts this app below a prefix.
 const basePath = process.env.BASE_PATH ?? '/';
 
 export default defineConfig({
@@ -28,7 +28,7 @@ export default defineConfig({
           (await import('@replit/vite-plugin-runtime-error-modal')).default(),
           await import('@replit/vite-plugin-cartographer').then((m) =>
             m.cartographer({
-              root: path.resolve(__dirname, '..'),
+              root: __dirname,
             }),
           ),
           await import('@replit/vite-plugin-dev-banner').then((m) =>
@@ -45,8 +45,6 @@ export default defineConfig({
   },
   root: path.resolve(__dirname),
   build: {
-    // Output directory untuk Vercel: artifacts/perpus-pintar/dist
-    // Sesuai dengan outputDirectory di vercel.json (artifacts/perpus-pintar/dist)
     outDir: path.resolve(__dirname, 'dist'),
     emptyOutDir: true,
   },

@@ -1,1 +1,0 @@
-- [Perpus Pintar - Supabase Migration](perpus-pintar-supabase.md) — app selesai di artifacts/perpus-pintar; Supabase connected, schema SQL di supabase/schema.sql, GitHub push perlu GitHub auth di Replit.
