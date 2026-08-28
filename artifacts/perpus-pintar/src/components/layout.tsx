@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, BookOpen, ArrowLeftRight, Users, FolderOpen,
   Archive, UserCog, Heart, User, BarChart3, LogOut, Moon, Sun,
-  Bell, Menu, X, ChevronRight, Search, ChevronDown, Building2,
+  Bell, Menu, X, ChevronRight, Search, ChevronDown, Library,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/theme-provider";
@@ -116,8 +116,8 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
       {/* Brand header */}
       <div className="px-4 py-4 border-b border-sidebar-border/40 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl overflow-hidden shadow-md shadow-primary/25 flex-shrink-0">
-            <img src={VIREON_LOGO} alt="Vireon" className="w-full h-full object-cover" loading="eager" fetchPriority="high" decoding="sync" />
+          <div className="w-9 h-9 flex-shrink-0">
+            <img src={VIREON_LOGO} alt="Vireon" className="w-full h-full object-contain" loading="eager" fetchPriority="high" decoding="sync" />
           </div>
           <div className="leading-tight">
             <p className="text-[12px] font-bold text-sidebar-foreground font-heading tracking-wide">VIREON</p>
@@ -152,15 +152,15 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
         ))}
       </nav>
 
-      {/* Bottom — school / logout */}
+      {/* Bottom — workspace / logout */}
       <div className="border-t border-sidebar-border/40 p-2.5">
         <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-sidebar-accent/50">
           <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <Building2 size={13} className="text-primary" />
+            <Library size={13} className="text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-semibold text-sidebar-foreground truncate">SMKN 2</p>
-            <p className="text-[10px] text-sidebar-foreground/45 truncate">Lubuk Basung</p>
+            <p className="text-[11px] font-semibold text-sidebar-foreground truncate">Vireon Library</p>
+            <p className="text-[10px] text-sidebar-foreground/45 truncate">Workspace aktif</p>
           </div>
           <button
             onClick={handleLogout}
@@ -194,8 +194,8 @@ function Header({ onMenuClick }: { onMenuClick: () => void }) {
 
       {/* Mobile logo */}
       <div className="flex items-center gap-2 md:hidden">
-        <div className="w-7 h-7 rounded-lg overflow-hidden flex-shrink-0">
-          <img src={VIREON_LOGO} alt="Vireon" className="w-full h-full object-cover" loading="eager" fetchPriority="high" decoding="sync" />
+        <div className="w-8 h-8 flex-shrink-0">
+          <img src={VIREON_LOGO} alt="Vireon" className="w-full h-full object-contain" loading="eager" fetchPriority="high" decoding="sync" />
         </div>
         <span className="text-sm font-bold gradient-text font-heading tracking-wide">VIREON</span>
       </div>

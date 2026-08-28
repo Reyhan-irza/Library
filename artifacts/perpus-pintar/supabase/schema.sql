@@ -1,5 +1,5 @@
 -- ============================================================
--- Perpustakaan SMKN 2 Lubuk Basung — Supabase Schema
+-- Vireon Library — Supabase Schema
 -- Run this in Supabase Dashboard → SQL Editor
 -- ============================================================
 

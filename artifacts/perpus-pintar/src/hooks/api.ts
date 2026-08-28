@@ -30,6 +30,11 @@ export const getTopBooksQueryKey = () => ['topBooks'];
 export const getNotificationsQueryKey = () => ['notifications'];
 export const getMeQueryKey = () => ['me'];
 export const getReportSummaryQueryKey = () => ['report', 'summary'];
+export const getLandingStatsQueryKey = () => ['landing', 'stats'];
+
+function invalidateLandingStats(qc: ReturnType<typeof useQueryClient>) {
+  return qc.invalidateQueries({ queryKey: getLandingStatsQueryKey() });
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -120,7 +125,10 @@ export function useCreateBook() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: getBooksQueryKey() }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: getBooksQueryKey() });
+      invalidateLandingStats(qc);
+    },
   });
 }
 
@@ -145,7 +153,10 @@ export function useUpdateBook() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: getBooksQueryKey() }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: getBooksQueryKey() });
+      invalidateLandingStats(qc);
+    },
   });
 }
 
@@ -156,7 +167,10 @@ export function useDeleteBook() {
       const { error } = await supabase.from('books').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: getBooksQueryKey() }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: getBooksQueryKey() });
+      invalidateLandingStats(qc);
+    },
   });
 }
 
@@ -311,7 +325,10 @@ export function useCreateMember() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: getMembersQueryKey() }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: getMembersQueryKey() });
+      invalidateLandingStats(qc);
+    },
   });
 }
 
@@ -322,7 +339,10 @@ export function useUpdateMember() {
       const { error } = await supabase.from('members').update({ name: data.name, email: data.email ?? null, phone: data.phone ?? null, address: data.address ?? null }).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: getMembersQueryKey() }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: getMembersQueryKey() });
+      invalidateLandingStats(qc);
+    },
   });
 }
 
@@ -333,7 +353,10 @@ export function useDeleteMember() {
       const { error } = await supabase.from('members').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: getMembersQueryKey() }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: getMembersQueryKey() });
+      invalidateLandingStats(qc);
+    },
   });
 }
 
@@ -371,6 +394,7 @@ export function useCreateBorrowing() {
       qc.invalidateQueries({ queryKey: getBorrowingsQueryKey() });
       qc.invalidateQueries({ queryKey: getBooksQueryKey() });
       qc.invalidateQueries({ queryKey: getDashboardStatsQueryKey() });
+      invalidateLandingStats(qc);
     },
   });
 }
@@ -389,6 +413,7 @@ export function useReturnBook() {
       qc.invalidateQueries({ queryKey: getBorrowingsQueryKey() });
       qc.invalidateQueries({ queryKey: getBooksQueryKey() });
       qc.invalidateQueries({ queryKey: getDashboardStatsQueryKey() });
+      invalidateLandingStats(qc);
     },
   });
 }
@@ -756,8 +781,6 @@ export function useChangePassword() {
 
 // ── Landing page stats (public — graceful fallback on RLS block) ──────────
 
-export const getLandingStatsQueryKey = () => ['landing', 'stats'];
-
 export interface LandingStats {
   totalBooks: number;
   totalMembers: number;
@@ -785,7 +808,17 @@ export function useLandingStats() {
       };
     },
     retry: false,
-    staleTime: 1000 * 60 * 5,
+    // The dashboard can change these values moments before the visitor returns
+    // to the landing page. Always re-check on mount/focus instead of serving a
+    // five-minute snapshot from the shared React Query cache.
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    // Also covers changes made from another dashboard tab/session where the
+    // local QueryClient cannot receive the mutation invalidation directly.
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: true,
   });
 }
 

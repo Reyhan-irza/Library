@@ -3,16 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <meta name="description" content="Vireon Library – Sistem manajemen perpustakaan digital yang modern dan efisien." />
+    <meta name="description" content="Vireon Library — ruang kerja digital untuk koleksi, anggota, peminjaman, dan laporan perpustakaan." />
     <meta name="theme-color" content="#1F5E4A" />
     <meta property="og:title" content="Vireon Library" />
-    <meta property="og:description" content="Vireon Library System" />
+    <meta property="og:description" content="Ruang kerja digital untuk perpustakaan yang lebih rapi dan mudah dijelajahi." />
     <meta property="og:type" content="website" />
     <title>Vireon Library</title>
     <!-- Preload critical images so hero renders instantly -->
     <link rel="preload" as="image" href="/library-bg.jpg" fetchpriority="high" type="image/jpeg" />
-    <link rel="preload" as="image" href="/vireon-logo.webp" fetchpriority="high" type="image/webp" />
-    <link rel="icon" type="image/png" href="/vireon-logo.png" />
+    <!-- Preload logo so it is already in cache when React mounts -->
+    <link rel="preload" as="image" href="/vireon-logo-new.png" fetchpriority="high" type="image/png" />
+    <link rel="icon" type="image/png" href="/vireon-logo-new.png" />
   </head>
   <body>
     <div id="root"></div>

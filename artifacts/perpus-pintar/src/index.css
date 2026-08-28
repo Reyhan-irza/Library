@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Sora:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -57,7 +57,7 @@
   --color-sidebar-accent-border: var(--sidebar-accent-border);
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
-  --font-sans: 'Inter', sans-serif;
+  --font-sans: 'DM Sans', sans-serif;
   --font-heading: 'Sora', sans-serif;
 
   --radius-sm: calc(var(--radius) - 4px);
@@ -74,41 +74,41 @@
   --elevate-1: rgba(0,0,0,.03);
   --elevate-2: rgba(0,0,0,.06);
 
-  --background:   210 40% 98%;
-  --foreground:   222 47% 11%;
+  --background:   42 38% 97%;
+  --foreground:   168 28% 13%;
 
-  --border:       214 32% 91%;
-  --input:        214 32% 91%;
-  --ring:         161 50% 25%;
+  --border:       38 22% 88%;
+  --input:        38 22% 88%;
+  --ring:         163 45% 31%;
 
-  --card:            0   0% 100%;
-  --card-foreground: 222 47% 11%;
-  --card-border:     214 32% 91%;
+  --card:            40 33% 99%;
+  --card-foreground: 168 28% 13%;
+  --card-border:     38 22% 88%;
 
-  --sidebar:            0   0% 100%;
-  --sidebar-foreground: 222 47% 11%;
-  --sidebar-border:     214 32% 91%;
-  --sidebar-primary:    161 50% 25%;
+  --sidebar:            42 32% 98%;
+  --sidebar-foreground: 168 28% 13%;
+  --sidebar-border:     38 22% 88%;
+  --sidebar-primary:    163 45% 31%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent:     210 40% 96%;
-  --sidebar-accent-foreground:  222 47% 11%;
-  --sidebar-ring:       161 50% 25%;
+  --sidebar-accent:     42 24% 93%;
+  --sidebar-accent-foreground:  168 28% 13%;
+  --sidebar-ring:       163 45% 31%;
 
-  --popover:            0   0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --popover-border:     214 32% 91%;
+  --popover:            40 33% 99%;
+  --popover-foreground: 168 28% 13%;
+  --popover-border:     38 22% 88%;
 
-  --primary:            161 50% 25%;
+  --primary:            163 45% 31%;
   --primary-foreground: 0   0% 100%;
 
-  --secondary:            175 84% 24%;
+  --secondary:            188 41% 31%;
   --secondary-foreground: 0   0% 100%;
 
-  --muted:            210 40% 96%;
-  --muted-foreground: 215 16% 47%;
+  --muted:            42 24% 93%;
+  --muted-foreground: 168 10% 45%;
 
-  --accent:            210 40% 96%;
-  --accent-foreground: 222 47% 11%;
+  --accent:            42 24% 93%;
+  --accent-foreground: 168 28% 13%;
 
   --destructive:            0 84% 60%;
   --destructive-foreground: 0  0% 100%;
@@ -139,41 +139,41 @@
   --elevate-1: rgba(255,255,255,.03);
   --elevate-2: rgba(255,255,255,.06);
 
-  --background:   222 47% 7%;
-  --foreground:   210 17% 98%;
+  --background:   166 28% 9%;
+  --foreground:   42 30% 96%;
 
-  --border:       215 28% 14%;
-  --input:        215 28% 14%;
-  --ring:         161 50% 35%;
+  --border:       166 18% 20%;
+  --input:        166 18% 20%;
+  --ring:         160 42% 55%;
 
-  --card:            220 20% 10%;
-  --card-foreground: 210 17% 98%;
-  --card-border:     215 28% 14%;
+  --card:            166 24% 12%;
+  --card-foreground: 42 30% 96%;
+  --card-border:     166 18% 20%;
 
-  --sidebar:            220 20% 10%;
-  --sidebar-foreground: 210 17% 98%;
-  --sidebar-border:     215 28% 14%;
-  --sidebar-primary:    161 50% 35%;
+  --sidebar:            166 24% 12%;
+  --sidebar-foreground: 42 30% 96%;
+  --sidebar-border:     166 18% 20%;
+  --sidebar-primary:    160 42% 48%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent:     215 28% 17%;
-  --sidebar-accent-foreground:  210 17% 98%;
-  --sidebar-ring:       161 50% 35%;
+  --sidebar-accent:     166 18% 18%;
+  --sidebar-accent-foreground:  42 30% 96%;
+  --sidebar-ring:       160 42% 48%;
 
-  --popover:            220 20% 10%;
-  --popover-foreground: 210 17% 98%;
-  --popover-border:     215 28% 14%;
+  --popover:            166 24% 12%;
+  --popover-foreground: 42 30% 96%;
+  --popover-border:     166 18% 20%;
 
-  --primary:            161 50% 35%;
+  --primary:            160 42% 48%;
   --primary-foreground: 0   0% 100%;
 
-  --secondary:            175 84% 30%;
+  --secondary:            188 41% 42%;
   --secondary-foreground: 0   0% 100%;
 
-  --muted:            215 28% 17%;
-  --muted-foreground: 215 20% 57%;
+  --muted:            166 18% 18%;
+  --muted-foreground: 166 12% 62%;
 
-  --accent:            215 28% 17%;
-  --accent-foreground: 210 17% 98%;
+  --accent:            166 18% 18%;
+  --accent-foreground: 42 30% 96%;
 
   --destructive:            0  62% 35%;
   --destructive-foreground: 210 17% 98%;
@@ -197,7 +197,7 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Sora', sans-serif;
     @apply tracking-tight;
   }
 
@@ -291,7 +291,11 @@ input:focus, textarea:focus, select:focus {
 
 /* ─── TYPOGRAPHY ──────────────────────────────────────────────────────────── */
 .font-heading {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Sora', sans-serif;
+}
+
+.font-mono {
+  font-family: 'Space Mono', monospace;
 }
 
 /* ─── SHIMMER ─────────────────────────────────────────────────────────────── */
@@ -323,6 +327,12 @@ input:focus, textarea:focus, select:focus {
   );
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .mouse-glow {
+    display: none;
+  }
+}
+
 /* ─── CARD HOVER LIFT ─────────────────────────────────────────────────────── */
 .card-lift {
   transition: transform 0.25s cubic-bezier(0.23, 1, 0.32, 1),
@@ -337,4 +347,92 @@ input:focus, textarea:focus, select:focus {
   box-shadow:
     0 0 20px hsl(var(--primary) / 0.35),
     0 4px 14px hsl(var(--primary) / 0.2);
+}
+
+/* ─── CUSTOM CURSOR — landing page only ───────────────────────────────────── */
+/* Hide the system cursor everywhere inside the landing wrapper.               */
+/* CustomCursor component renders its own two-layer cursor on pointer devices. */
+.vireon-cursor-active,
+.vireon-cursor-active * {
+  cursor: none !important;
+}
+
+/* ─── NOISE / GRAIN TEXTURE ───────────────────────────────────────────────── */
+/* SVG turbulence noise — renders a tiling procedural grain at ~3.5% opacity. */
+/* Applied as a fixed overlay so it covers the full viewport while scrolling. */
+.vireon-grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9985;
+  opacity: 0.038;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+/* ─── SCROLL PROGRESS BAR ─────────────────────────────────────────────────── */
+.vireon-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 9980;
+  transform-origin: left center;
+  background: linear-gradient(90deg, hsl(161 52% 38%), hsl(150 80% 55%));
+}
+
+/* ─── LINK UNDERLINE ANIMATION ────────────────────────────────────────────── */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.22s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.link-underline:hover::after {
+  transform: scaleX(1);
+}
+
+/* Scroll choreography: the landing page uses depth and rhythm rather than
+   repeating the same reveal on every block. */
+.landing-section {
+  isolation: isolate;
+}
+.depth-layer {
+  will-change: transform;
+}
+.scroll-progress {
+  transform-origin: 0 50%;
+}
+
+@media (max-width: 767px) {
+  .vireon-cursor-active,
+  .vireon-cursor-active * {
+    cursor: auto !important;
+  }
+  .depth-layer {
+    transform: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+  .depth-layer {
+    transform: none !important;
+  }
 }
