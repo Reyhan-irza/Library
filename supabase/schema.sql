@@ -84,6 +84,33 @@ create policy "Authenticated users can read books"
 create policy "Authenticated users can manage books"
   on books for all using (auth.role() = 'authenticated');
 
+-- ── Book Cover Storage ─────────────────────────────────────────────────────
+-- Create the bucket once before using the photo upload in the Books form.
+insert into storage.buckets (id, name, public)
+values ('book-covers', 'book-covers', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "Anyone can view book covers" on storage.objects;
+create policy "Anyone can view book covers"
+  on storage.objects for select
+  using (bucket_id = 'book-covers');
+
+drop policy if exists "Authenticated users can upload book covers" on storage.objects;
+create policy "Authenticated users can upload book covers"
+  on storage.objects for insert to authenticated
+  with check (bucket_id = 'book-covers');
+
+drop policy if exists "Authenticated users can update book covers" on storage.objects;
+create policy "Authenticated users can update book covers"
+  on storage.objects for update to authenticated
+  using (bucket_id = 'book-covers')
+  with check (bucket_id = 'book-covers');
+
+drop policy if exists "Authenticated users can delete book covers" on storage.objects;
+create policy "Authenticated users can delete book covers"
+  on storage.objects for delete to authenticated
+  using (bucket_id = 'book-covers');
+
 -- ── Members ───────────────────────────────────────────────────────────────
 create table if not exists members (
   id             serial primary key,

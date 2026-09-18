@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, BookOpen, Edit, Trash2, Loader2 } from "lucide-react";
+import { Plus, Search, BookOpen, Edit, Trash2, Loader2, ImagePlus, X, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import {
   useListBooks, useCreateBook, useUpdateBook, useDeleteBook,
@@ -13,11 +13,13 @@ import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { SkeletonBookCard } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
+import { uploadBookCover, validateBookCover } from "@/lib/book-cover";
 
 function BookForm({ initial, onSubmit, loading, categories, racks }: {
-  initial?: Partial<BookInput>; onSubmit: (d: BookInput) => void; loading: boolean;
+  initial?: Partial<BookInput>; onSubmit: (d: BookInput, coverFile?: File) => Promise<void>; loading: boolean;
   categories: { id: number; name: string }[]; racks: { id: number; name: string }[];
 }) {
+  const fileInputId = `book-cover-${useId().replace(/:/g, "")}`;
   const [form, setForm] = useState<BookInput>({
     isbn: initial?.isbn ?? "",
     title: initial?.title ?? "",
@@ -31,6 +33,20 @@ function BookForm({ initial, onSubmit, loading, categories, racks }: {
     categoryId: initial?.categoryId,
     rackId: initial?.rackId,
   });
+  const [coverFile, setCoverFile] = useState<File | undefined>();
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const busy = loading || submitting;
+
+  useEffect(() => {
+    if (!coverFile) {
+      setCoverPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(coverFile);
+    setCoverPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [coverFile]);
 
   function field(key: keyof BookInput) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -40,8 +56,37 @@ function BookForm({ initial, onSubmit, loading, categories, racks }: {
     };
   }
 
+  function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const error = validateBookCover(file);
+    if (error) {
+      toast.error(error);
+      e.target.value = "";
+      return;
+    }
+    setCoverFile(file);
+  }
+
+  function clearCover() {
+    setCoverFile(undefined);
+    setForm(f => ({ ...f, coverUrl: "" }));
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await onSubmit(form, coverFile);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const previewUrl = coverPreview ?? form.coverUrl;
+
   return (
-    <form onSubmit={e => { e.preventDefault(); onSubmit(form); }} className="space-y-3">
+    <form onSubmit={handleSubmit} className="space-y-3">
       {(["isbn", "title", "author"] as const).map(k => (
         <div key={k}>
           <label className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">
@@ -51,15 +96,66 @@ function BookForm({ initial, onSubmit, loading, categories, racks }: {
             className="mt-1 w-full h-10 px-3 rounded-xl border border-border bg-background/60 text-sm focus:outline-none focus:border-primary transition-colors" />
         </div>
       ))}
-      {(["publisher", "coverUrl"] as const).map(k => (
-        <div key={k}>
-          <label className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">
-            {k === "publisher" ? "Penerbit" : "URL Sampul"}
+      <div>
+        <label className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Penerbit</label>
+        <input value={form.publisher ?? ""} onChange={field("publisher")}
+          className="mt-1 w-full h-10 px-3 rounded-xl border border-border bg-background/60 text-sm focus:outline-none focus:border-primary transition-colors" />
+      </div>
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <label htmlFor={fileInputId} className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">
+            Foto Sampul
           </label>
-          <input value={(form as any)[k] ?? ""} onChange={field(k)}
-            className="mt-1 w-full h-10 px-3 rounded-xl border border-border bg-background/60 text-sm focus:outline-none focus:border-primary transition-colors" />
+          <span className="text-[10px] text-muted-foreground">JPG, PNG, WEBP · maks. 5 MB</span>
         </div>
-      ))}
+        <div className="mt-1.5 flex items-stretch gap-3">
+          <label
+            htmlFor={fileInputId}
+            className="relative flex min-h-[116px] flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed border-primary/35 bg-primary/[0.035] transition-colors hover:border-primary/70 hover:bg-primary/[0.07]"
+          >
+            {previewUrl ? (
+              <>
+                <img src={previewUrl} alt="Preview sampul buku" className="absolute inset-0 h-full w-full object-cover" />
+                <span className="absolute inset-0 flex items-center justify-center bg-slate-950/40 text-xs font-semibold text-white opacity-0 transition-opacity hover:opacity-100">
+                  Ganti foto
+                </span>
+              </>
+            ) : (
+              <span className="flex flex-col items-center gap-1.5 text-center text-muted-foreground">
+                <ImagePlus size={20} className="text-primary/70" />
+                <span className="text-xs font-semibold text-foreground/70">Pilih foto sampul</span>
+                <span className="text-[10px]">atau seret gambar ke sini</span>
+              </span>
+            )}
+            <input
+              id={fileInputId}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/avif"
+              onChange={handleCoverChange}
+              className="sr-only"
+              disabled={busy}
+            />
+          </label>
+          {previewUrl && (
+            <button
+              type="button"
+              onClick={clearCover}
+              disabled={busy}
+              className="self-start rounded-lg border border-border bg-background p-2 text-muted-foreground transition-colors hover:border-rose-300 hover:bg-rose-50 hover:text-rose-500"
+              aria-label="Hapus foto sampul"
+              title="Hapus foto sampul"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <div className="mt-2 flex items-center gap-2">
+          <UploadCloud size={13} className="text-muted-foreground" />
+          <input value={form.coverUrl ?? ""} onChange={field("coverUrl")}
+            placeholder="Atau tempel URL gambar"
+            className="h-8 min-w-0 flex-1 rounded-lg border border-border bg-background/60 px-2.5 text-xs focus:outline-none focus:border-primary transition-colors" />
+        </div>
+      </div>
       <div className="grid grid-cols-3 gap-3">
         {(["year", "stock", "pages"] as const).map(k => (
           <div key={k}>
@@ -94,9 +190,9 @@ function BookForm({ initial, onSubmit, loading, categories, racks }: {
         <textarea value={form.description ?? ""} onChange={field("description")} rows={3}
           className="mt-1 w-full px-3 py-2 rounded-xl border border-border bg-background/60 text-sm focus:outline-none focus:border-primary transition-colors resize-none" />
       </div>
-      <button type="submit" disabled={loading}
+      <button type="submit" disabled={busy}
         className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition-all">
-        {loading ? <><Loader2 size={15} className="animate-spin" /> Menyimpan…</> : "Simpan"}
+        {busy ? <><Loader2 size={15} className="animate-spin" /> {coverFile && !loading ? "Mengunggah sampul…" : "Menyimpan…"}</> : "Simpan"}
       </button>
     </form>
   );
@@ -129,19 +225,27 @@ export default function BooksPage() {
     return matchSearch && matchCat && matchStatus;
   });
 
-  function handleCreate(data: BookInput) {
-    createBook.mutate(data, {
-      onSuccess: () => { toast.success("Buku berhasil ditambahkan"); setShowAdd(false); },
-      onError: (e: any) => toast.error(e?.message ?? "Gagal menambahkan buku"),
-    });
+  async function handleCreate(data: BookInput, coverFile?: File) {
+    try {
+      const coverUrl = coverFile ? await uploadBookCover(coverFile) : data.coverUrl;
+      await createBook.mutateAsync({ ...data, coverUrl });
+      toast.success("Buku berhasil ditambahkan");
+      setShowAdd(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Gagal menambahkan buku");
+    }
   }
 
-  function handleUpdate(data: BookInput) {
+  async function handleUpdate(data: BookInput, coverFile?: File) {
     if (!editBook) return;
-    updateBook.mutate({ id: editBook.id, data }, {
-      onSuccess: () => { toast.success("Buku berhasil diperbarui"); setEditBook(null); },
-      onError: (e: any) => toast.error(e?.message ?? "Gagal memperbarui buku"),
-    });
+    try {
+      const coverUrl = coverFile ? await uploadBookCover(coverFile) : data.coverUrl;
+      await updateBook.mutateAsync({ id: editBook.id, data: { ...data, coverUrl } });
+      toast.success("Buku berhasil diperbarui");
+      setEditBook(null);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Gagal memperbarui buku");
+    }
   }
 
   function handleDelete() {

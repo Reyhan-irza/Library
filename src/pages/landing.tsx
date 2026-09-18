@@ -14,6 +14,7 @@ import {
   useAnimation,
 } from "framer-motion";
 import { useEffect, useRef, useState, useCallback } from "react";
+import gsap from "gsap";
 import {
   BookOpen,
   Users,
@@ -262,10 +263,14 @@ function Sk({ w = "w-12", h = "h-5" }: { w?: string; h?: string }) {
 function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileMounted, setMobileMounted] = useState(false);
   const reduced = useReducedMotion();
   const { scrollYProgress } = useScroll();
   const { direction } = useScrollIntent(72);
   const navVisible = !scrolled || direction === "up" || mobileOpen;
+  const mobilePanelRef = useRef<HTMLDivElement>(null);
+  const mobileBackdropRef = useRef<HTMLButtonElement>(null);
+  const mobileItemsRef = useRef<HTMLElement[]>([]);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 16);
@@ -275,18 +280,63 @@ function LandingNav() {
   }, []);
 
   useEffect(() => {
+    if (!mobileOpen && !mobileMounted) return;
+    if (mobileOpen && !mobileMounted) return;
+    const panel = mobilePanelRef.current;
+    const backdrop = mobileBackdropRef.current;
+    if (!panel || !backdrop) return;
+    const items = mobileItemsRef.current.filter(Boolean);
+    const context = gsap.context(() => {
+      if (mobileOpen) {
+        gsap.set(panel, { x: "100%", opacity: reduced ? 1 : 0.92 });
+        gsap.set(backdrop, { opacity: 0 });
+        gsap.set(items, { x: reduced ? 0 : 22, opacity: reduced ? 1 : 0 });
+        const timeline = gsap.timeline({ defaults: { overwrite: "auto" } });
+        timeline
+          .to(backdrop, { opacity: 1, duration: reduced ? 0 : 0.28, ease: "power2.out" }, 0)
+          .to(panel, { x: "0%", opacity: 1, duration: reduced ? 0 : 0.52, ease: "expo.out" }, 0)
+          .to(items, { x: 0, opacity: 1, duration: reduced ? 0 : 0.4, stagger: 0.055, ease: "power3.out" }, 0.1);
+      } else {
+        gsap.timeline({
+          defaults: { overwrite: "auto" },
+          onComplete: () => setMobileMounted(false),
+        })
+          .to(items, { x: 14, opacity: 0, duration: reduced ? 0 : 0.14, stagger: 0.02, ease: "power2.in" }, 0)
+          .to(panel, { x: "100%", duration: reduced ? 0 : 0.34, ease: "power3.in" }, 0.03)
+          .to(backdrop, { opacity: 0, duration: reduced ? 0 : 0.22, ease: "power2.in" }, 0);
+      }
+    }, mobilePanelRef);
+    return () => context.revert();
+  }, [mobileOpen, mobileMounted, reduced]);
+
+  useEffect(() => {
+    if (!mobileMounted) return;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMounted]);
+
+  useEffect(() => {
     if (!mobileOpen) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileOpen(false);
+      if (e.key === "Escape") closeMobile();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [mobileOpen]);
+  });
+
+  const openMobile = useCallback(() => {
+    setMobileMounted(true);
+    setMobileOpen(true);
+  }, []);
+
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
 
   const handleScroll = useCallback((id: string) => {
-    setMobileOpen(false);
-    setTimeout(() => scrollTo(id), 50);
-  }, []);
+    closeMobile();
+    setTimeout(() => scrollTo(id), 340);
+  }, [closeMobile]);
 
   const navItem = scrolled
     ? "text-[13.5px] font-medium text-slate-500 hover:text-slate-900 px-3.5 py-2 rounded-lg hover:bg-slate-50 transition-colors duration-150"
@@ -340,7 +390,7 @@ function LandingNav() {
           </div>
 
           <button
-            onClick={() => setMobileOpen((v) => !v)}
+            onClick={mobileOpen ? closeMobile : openMobile}
             className={`md:hidden p-2 rounded-lg transition-colors ${scrolled ? "text-slate-500 hover:text-slate-900 hover:bg-slate-50" : "text-white/80 hover:text-white hover:bg-white/10"}`}
             aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
             aria-expanded={mobileOpen}
@@ -350,40 +400,85 @@ function LandingNav() {
         </div>
       </motion.header>
 
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={reduced ? {} : { opacity: 0, y: -6 }}
-            animate={reduced ? {} : { opacity: 1, y: 0 }}
-            exit={reduced ? {} : { opacity: 0, y: -4 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="fixed top-[60px] inset-x-0 z-40 bg-white/[0.98] backdrop-blur-xl border-b border-slate-200 shadow-xl md:hidden"
-            role="dialog"
-            aria-modal="true"
+      {mobileMounted && (
+        <div className="md:hidden" role="dialog" aria-modal="true" aria-label="Navigasi Vireon">
+          <button
+            ref={mobileBackdropRef}
+            type="button"
+            onClick={closeMobile}
+            className="fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-[3px]"
+            aria-label="Tutup menu"
+          />
+          <div
+            ref={mobilePanelRef}
+            className="fixed inset-y-0 right-0 z-50 flex w-[min(88vw,380px)] flex-col overflow-y-auto border-l border-slate-200 bg-white shadow-[-24px_0_70px_-28px_rgba(15,23,42,0.5)]"
           >
-            <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-0.5">
-              {[{ label: "Cara Kerja", id: "how" }, { label: "Fitur", id: "features" }, { label: "Tentang", id: "about" }].map(({ label, id }) => (
-                <button
-                  key={id}
-                  onClick={() => handleScroll(id)}
-                  className="text-left text-[15px] font-medium text-slate-700 px-3 py-3.5 rounded-xl hover:bg-slate-50 transition-colors min-h-[44px] flex items-center"
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-5">
+              <div className="flex items-center gap-2.5">
+                <div className="h-9 w-9">
+                  <img src={VIREON_LOGO} alt="VIREON" className="h-full w-full object-contain" />
+                </div>
+                <div className="leading-none">
+                  <p className="text-[13px] font-bold tracking-[0.05em] text-slate-900">VIREON</p>
+                  <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.14em] text-slate-400">Library System</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeMobile}
+                className="rounded-xl border border-slate-200 p-2.5 text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                aria-label="Tutup menu"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 px-4 py-6">
+              <p className="px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Navigasi utama</p>
+              <nav className="mt-3 flex flex-col gap-1" aria-label="Navigasi utama">
+                {[{ label: "Cara Kerja", id: "how" }, { label: "Fitur", id: "features" }, { label: "Tentang", id: "about" }].map(({ label, id }, index) => (
+                  <button
+                    key={id}
+                    ref={element => { if (element) mobileItemsRef.current[index] = element; }}
+                    onClick={() => handleScroll(id)}
+                    className="group flex min-h-[52px] items-center justify-between rounded-xl px-3.5 text-left text-[15px] font-semibold text-slate-700 transition-colors hover:bg-slate-50 hover:text-[hsl(161_52%_26%)]"
+                  >
+                    <span>{label}</span>
+                    <ChevronRight className="h-4 w-4 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-[hsl(161_52%_38%)]" />
+                  </button>
+                ))}
+              </nav>
+              <div className="my-6 h-px bg-slate-100" />
+              <p className="px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Akses sistem</p>
+              <div className="mt-3 flex flex-col gap-2">
+                <Link
+                  ref={element => { if (element) mobileItemsRef.current[3] = element; }}
+                  href="/login"
+                  onClick={closeMobile}
+                  className="flex min-h-[52px] items-center rounded-xl px-3.5 text-[15px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
                 >
-                  {label}
-                </button>
-              ))}
-              <div className="border-t border-slate-100 mt-1 pt-3 flex flex-col gap-2">
-                <Link href="/login" onClick={() => setMobileOpen(false)} className="text-[15px] font-medium text-slate-700 px-3 py-3.5 rounded-xl hover:bg-slate-50 transition-colors min-h-[44px] flex items-center">
-                  Masuk
+                  Masuk ke akun
                 </Link>
-                <Link href="/login" onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-1.5 text-[15px] font-semibold bg-[hsl(161_52%_26%)] text-white px-4 py-3.5 rounded-xl hover:bg-[hsl(161_52%_22%)] transition-all min-h-[44px]">
+                <Link
+                  ref={element => { if (element) mobileItemsRef.current[4] = element; }}
+                  href="/login"
+                  onClick={closeMobile}
+                  className="flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-[hsl(161_52%_26%)] px-4 text-[15px] font-semibold text-white shadow-[0_10px_24px_-12px_hsl(161_52%_26%)] transition-colors hover:bg-[hsl(161_52%_22%)]"
+                >
                   Mulai Sekarang
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
+              <div
+                ref={element => { if (element) mobileItemsRef.current[5] = element; }}
+                className="mt-10 rounded-2xl border border-[hsl(161_52%_26%/0.14)] bg-[hsl(161_52%_26%/0.05)] p-4"
+              >
+                <p className="text-xs font-bold text-[hsl(161_52%_26%)]">Ruang baca yang lebih tertata.</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-slate-500">Kelola koleksi, transaksi, dan laporan dari satu sistem yang tenang dan terukur.</p>
+              </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      )}
     </>
   );
 }
