@@ -1,0 +1,1 @@
+{"version":3,"file":"activityList.d.ts","sourceRoot":"","sources":["../../../src/generated/types/activityList.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AACH,OAAO,KAAK,EAAE,QAAQ,EAAE,MAAM,YAAY,CAAC;AAE3C,MAAM,WAAW,YAAY;IAC3B,IAAI,EAAE,QAAQ,EAAE,CAAC;IACjB,KAAK,EAAE,MAAM,CAAC;IACd,IAAI,EAAE,MAAM,CAAC;IACb,KAAK,EAAE,MAAM,CAAC;CACf"}

@@ -1,46 +1,34 @@
-# Vireon Library
+# Vireon / perpus-pintar (workspace)
 
-Sistem informasi manajemen perpustakaan untuk koleksi buku, anggota,
-peminjaman, favorit, laporan, dan aktivitas harian.
+This repository is a pnpm workspace containing multiple packages. The primary application in this repository is:
 
-## Stack
+  artifacts/perpus-pintar
 
-- React + TypeScript + Vite
-- Tailwind CSS
-- Supabase Auth dan PostgreSQL
-- TanStack Query
-- Vercel untuk hosting aplikasi web
+Quick start
 
-## Menjalankan secara lokal
+- Development (local):
 
-```bash
-pnpm install
-cp .env.example .env.local
-# isi VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY
-pnpm dev
-```
+  pnpm --filter @workspace/perpus-pintar run dev
 
-Jalankan `supabase/schema.sql` di SQL Editor project Supabase sebelum
-menggunakan fitur data dan autentikasi.
+- Build (production test):
 
-## Build production
+  pnpm --filter @workspace/perpus-pintar run build
 
-```bash
-pnpm build
-```
+Notes
 
-Hasil build berada di folder `dist/`.
+- The project uses pnpm workspaces (see pnpm-workspace.yaml and the root package.json).
+- The perpus-pintar app is built with Vite (see artifacts/perpus-pintar/vite.config.ts).
+- Vercel deployment is configured at the repository root and builds the perpus-pintar package; the root `vercel.json` points to `artifacts/perpus-pintar/dist` as the output directory.
 
-## Deploy ke Vercel
+Repository structure (important):
 
-1. Import repository ini ke Vercel.
-2. Biarkan Framework Preset menggunakan Vite atau pilih `Other`.
-3. Set Build Command ke `pnpm build`.
-4. Set Output Directory ke `dist`.
-5. Tambahkan environment variables berikut untuk environment Production:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-6. Deploy.
+- artifacts/perpus-pintar — Primary Vite application (do not move or rename).
+- artifacts/api-server — Secondary workspace package (API server).
+- lib/ and scripts/ — workspace libraries and helper packages.
 
-`vercel.json` sudah menangani fallback route untuk aplikasi SPA tanpa
-mengganggu file asset di folder `assets/`.
+Maintainer notes
+
+- Do not change workspace structure, package names, pnpm configuration, or vercel.json unless you understand how the monorepo build and deployment are affected.
+- Replit-specific metadata may exist under `artifacts/*/.replit-artifact`; these files are only used by Replit and are not required for pnpm, Vercel, or the Vite build.
+
+For more information about developing and building the workspace, see pnpm-workspace.yaml and the package.json files inside each package.

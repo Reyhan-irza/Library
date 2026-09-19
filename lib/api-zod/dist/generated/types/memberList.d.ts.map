@@ -1,0 +1,1 @@
+{"version":3,"file":"memberList.d.ts","sourceRoot":"","sources":["../../../src/generated/types/memberList.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AACH,OAAO,KAAK,EAAE,MAAM,EAAE,MAAM,UAAU,CAAC;AAEvC,MAAM,WAAW,UAAU;IACzB,IAAI,EAAE,MAAM,EAAE,CAAC;IACf,KAAK,EAAE,MAAM,CAAC;IACd,IAAI,EAAE,MAAM,CAAC;IACb,KAAK,EAAE,MAAM,CAAC;CACf"}
