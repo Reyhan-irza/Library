@@ -67,6 +67,11 @@ function AppRoutes() {
         {() => <PublicRoute component={LandingPage} />}
       </Route>
 
+      {/* Cache-busted public share URL for social previews */}
+      <Route path="/share-v2">
+        {() => <PublicRoute component={LandingPage} />}
+      </Route>
+
       {/* Login — bypass if already authenticated */}
       <Route path="/login">
         {() => <PublicRoute component={LoginPage} />}
