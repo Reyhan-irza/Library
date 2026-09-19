@@ -45,6 +45,7 @@ import {
   BellRing,
   CalendarDays,
   MoreHorizontal,
+  Sparkles,
 } from "lucide-react";
 import VIREON_LOGO from "@/assets/logo";
 import { useLandingStats } from "@/hooks/api";
@@ -552,7 +553,7 @@ function ScrollUpDock() {
 
 // ─── Dashboard Preview ────────────────────────────────────────────────────────
 
-function DashboardPreview({
+function LegacyDashboardPreview({
   stats,
   loading,
 }: {
@@ -726,12 +727,101 @@ function DashboardPreview({
   );
 }
 
+// ─── Library illustration ─────────────────────────────────────────────────────
+// The hero uses a warm editorial visual instead of a mini dashboard so the
+// landing page communicates the feeling of a well-run reading room first.
+
+function LibraryIllustration() {
+  const featureChips = [
+    { icon: BookOpen, label: "Koleksi tertata", className: "left-0 top-16 sm:left-2 sm:top-20" },
+    { icon: ArrowLeftRight, label: "Peminjaman otomatis", className: "right-0 top-8 sm:right-2 sm:top-12" },
+    { icon: BarChart3, label: "Laporan real-time", className: "right-2 bottom-20 sm:right-5 sm:bottom-24" },
+  ];
+
+  return (
+    <div className="relative min-h-[360px] w-full overflow-visible sm:min-h-[430px]">
+      <div
+        className="absolute inset-4 rounded-[32px] border border-white/15 bg-[radial-gradient(circle_at_50%_38%,rgba(81,199,164,0.24),transparent_42%),linear-gradient(145deg,rgba(8,41,35,0.92),rgba(12,65,54,0.72))] shadow-[0_30px_90px_-34px_rgba(0,0,0,0.8)]"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute inset-4 rounded-[32px] opacity-30"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.10) 1px, transparent 1px)",
+          backgroundSize: "32px 32px",
+          maskImage: "linear-gradient(to bottom, transparent, black 25%, black 75%, transparent)",
+        }}
+        aria-hidden="true"
+      />
+
+      <div className="absolute left-8 top-9 flex items-center gap-2 text-white/65 sm:left-12 sm:top-12">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/15 bg-white/10">
+          <Sparkles className="h-3.5 w-3.5 text-emerald-200" />
+        </span>
+        <span className="text-[9px] font-bold uppercase tracking-[0.2em]">Ruang baca yang lebih hidup</span>
+      </div>
+
+      <div className="absolute inset-x-0 bottom-10 top-20 flex items-center justify-center sm:bottom-14 sm:top-24">
+        <motion.div
+          animate={{ y: [0, -8, 0], rotate: [-1, 0.5, -1] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          className="relative h-[210px] w-[min(78vw,370px)] sm:h-[250px] sm:w-[410px]"
+        >
+          <div className="absolute bottom-0 left-1/2 h-8 w-[74%] -translate-x-1/2 rounded-full bg-black/25 blur-xl" aria-hidden="true" />
+          <div className="absolute left-[7%] top-[17%] h-[73%] w-[45%] -rotate-[10deg] rounded-[22px_7px_10px_24px] border border-[#d8cdbb] bg-[#f7f0e5] shadow-[inset_-12px_0_18px_rgba(148,112,67,0.10),-16px_18px_30px_rgba(0,0,0,0.22)]">
+            <div className="absolute inset-x-5 top-8 space-y-3 opacity-40">
+              <div className="h-1.5 w-3/4 rounded-full bg-[#96a89c]" />
+              <div className="h-1.5 w-full rounded-full bg-[#b8c2b7]" />
+              <div className="h-1.5 w-5/6 rounded-full bg-[#b8c2b7]" />
+              <div className="mt-7 h-12 rounded-lg bg-[#d9e8dc]" />
+            </div>
+            <div className="absolute bottom-7 left-5 h-1 w-10 rounded-full bg-[#1e7e6a]/55" />
+          </div>
+          <div className="absolute right-[7%] top-[17%] h-[73%] w-[45%] rotate-[10deg] rounded-[7px_22px_24px_10px] border border-[#d8cdbb] bg-[#fcf7ed] shadow-[inset_12px_0_18px_rgba(148,112,67,0.08),16px_18px_30px_rgba(0,0,0,0.22)]">
+            <div className="absolute inset-x-5 top-8 space-y-3 opacity-40">
+              <div className="h-1.5 w-2/3 rounded-full bg-[#96a89c]" />
+              <div className="h-1.5 w-full rounded-full bg-[#b8c2b7]" />
+              <div className="h-1.5 w-4/5 rounded-full bg-[#b8c2b7]" />
+              <div className="mt-7 h-12 rounded-lg bg-[#d9e8dc]" />
+            </div>
+            <div className="absolute bottom-7 right-5 h-1 w-10 rounded-full bg-[#1e7e6a]/55" />
+          </div>
+          <div className="absolute left-1/2 top-[16%] h-[76%] w-4 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#b8a88e] via-[#f0e5d3] to-[#9f8d73] shadow-[0_10px_14px_rgba(0,0,0,0.16)]" />
+          <div className="absolute left-1/2 top-[11%] h-10 w-5 -translate-x-1/2 rounded-b-full bg-[#d4b27d] shadow-[0_4px_8px_rgba(0,0,0,0.18)]" />
+          <div className="absolute left-1/2 top-[3%] h-5 w-2 -translate-x-1/2 rounded-full bg-[#efcc91]" />
+          <div className="absolute left-1/2 top-[25%] h-24 w-1 -translate-x-1/2 bg-[#3e8b74]/25" />
+        </motion.div>
+      </div>
+
+      {featureChips.map(({ icon: Icon, label, className }, index) => (
+        <motion.div
+          key={label}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 + index * 0.12, duration: 0.5, ease: E_OUT }}
+          className={`absolute z-10 flex items-center gap-2 rounded-full border border-white/15 bg-[#f8fbf7]/95 px-3 py-2 text-[10px] font-bold text-[#174b40] shadow-[0_12px_28px_-10px_rgba(0,0,0,0.6)] backdrop-blur-md sm:px-3.5 sm:py-2.5 sm:text-[11px] ${className}`}
+        >
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#d7eee4] text-[#14725f]">
+            <Icon className="h-3 w-3" />
+          </span>
+          {label}
+        </motion.div>
+      ))}
+
+      <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/15 bg-black/20 px-3 py-1.5 text-[9px] font-medium text-white/60 backdrop-blur-sm sm:bottom-5">
+        <CheckCircle2 className="h-3 w-3 text-emerald-300" />
+        Satu ruang untuk seluruh aktivitas baca
+      </div>
+    </div>
+  );
+}
+
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 // Word-by-word blur-focus reveal on headline. Each word materialises
 // from a blurred haze and rises into position — 0.08 s apart.
 
 function HeroSection() {
-  const { data: stats, isLoading } = useLandingStats();
   const reduced = useReducedMotion();
   const { scrollY } = useScroll();
   const bgY = useTransform(scrollY, [0, 700], ["0%", "18%"]);
@@ -939,7 +1029,7 @@ function HeroSection() {
 
             {/* Subtle perpetual float */}
             <motion.div style={reduced ? {} : { y: previewY }}>
-              <DashboardPreview stats={stats} loading={isLoading} />
+              <LibraryIllustration />
             </motion.div>
           </motion.div>
         </div>
