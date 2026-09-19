@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   Activity,
 } from "lucide-react";
+import VIREON_LOGO from "@/assets/logo";
 
 function fmt(n: number): string {
   return n.toLocaleString("id-ID");
@@ -105,12 +106,12 @@ export default function DashboardPreview({ stats, loading }: Props) {
         <div className="w-[108px] shrink-0 border-r border-slate-200/60 bg-white flex flex-col py-3">
           {/* Brand mark */}
           <div className="flex items-center gap-1.5 px-3 mb-3">
-            <div
-              className="w-5 h-5 rounded-[5px] flex items-center justify-center shrink-0"
-              style={{ background: "hsl(161 52% 26%)" }}
-            >
-              <BookOpen className="w-2.5 h-2.5 text-white" strokeWidth={2.5} />
-            </div>
+            <img
+              src={VIREON_LOGO}
+              alt=""
+              className="w-5 h-5 shrink-0 rounded-[5px] object-contain"
+              style={{ filter: "none" }}
+            />
             <span className="text-[10px] font-extrabold tracking-[0.06em] text-slate-900">
               VIREON
             </span>

@@ -22,7 +22,7 @@ import {
   AlertCircle,
   Clock,
 } from "lucide-react";
-import VIREON_LOGO from "@/assets/logo";
+import VIREON_LOGO, { VIREON_WORDMARK } from "@/assets/logo";
 import { useLogin, useLandingStats } from "@/hooks/api";
 import DashboardPreview from "@/components/dashboard-preview";
 import { PrivacyBook, type PrivacyBookState } from "@/components/login-illustration";
@@ -171,19 +171,15 @@ export default function LoginPage() {
           </Link>
 
           {/* VIREON mark — mobile only (right side of header) */}
-          <div className="flex items-center gap-2 lg:hidden">
-            <div className="w-7 h-7 shrink-0 drop-shadow-sm">
-              <img
-                src={VIREON_LOGO}
-                alt="VIREON"
-                className="w-full h-full object-contain"
-                loading="eager"
-                decoding="sync"
-              />
-            </div>
-            <span className="text-[12.5px] font-bold text-slate-800 tracking-[0.05em]">
-              VIREON
-            </span>
+          <div className="flex items-center lg:hidden">
+            <img
+              src={VIREON_WORDMARK}
+              alt="VIREON Library"
+              className="block w-[112px] h-auto object-contain"
+              style={{ filter: "none" }}
+              loading="eager"
+              decoding="sync"
+            />
           </div>
         </div>
 
@@ -198,25 +194,16 @@ export default function LoginPage() {
             {/* VIREON wordmark — desktop only */}
             <motion.div
               {...fadeUp(0, reduced)}
-              className="hidden lg:flex items-center gap-2.5 mb-10"
+              className="hidden lg:flex items-center mb-10"
             >
-              <div className="w-10 h-10 shrink-0 drop-shadow-sm">
-                <img
-                  src={VIREON_LOGO}
-                  alt="VIREON"
-                  className="w-full h-full object-contain"
-                  loading="eager"
-                  decoding="sync"
-                />
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[13px] font-bold text-slate-900 tracking-[0.06em]">
-                  VIREON
-                </span>
-                <span className="text-[9.5px] font-medium text-slate-400 uppercase tracking-[0.14em]">
-                  Library System
-                </span>
-              </div>
+              <img
+                src={VIREON_WORDMARK}
+                alt="VIREON Library"
+                className="block w-[164px] h-auto object-contain"
+                style={{ filter: "none" }}
+                loading="eager"
+                decoding="sync"
+              />
             </motion.div>
 
             {/* Heading group with Privacy Mascot */}

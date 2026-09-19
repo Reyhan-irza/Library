@@ -37,7 +37,7 @@ import {
   Clock,
   Sparkles,
 } from "lucide-react";
-import VIREON_LOGO from "@/assets/logo";
+import VIREON_LOGO, { VIREON_WORDMARK } from "@/assets/logo";
 import { useLandingStats } from "@/hooks/api";
 import { CustomCursor } from "@/components/custom-cursor";
 import "@/components/landing-marquee.css";
@@ -1510,21 +1510,16 @@ function LandingFooter() {
             {...fadeLeftView(0, reduced ?? false)}
             className="md:col-span-5"
           >
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 shrink-0">
-                <img
-                  src={VIREON_LOGO}
-                  alt="VIREON"
-                  className="w-full h-full object-contain"
-                  loading="eager"
-                  fetchPriority="high"
-                  decoding="sync"
-                />
-              </div>
-              <div className="leading-none">
-                <div className="text-[13px] font-bold text-slate-900 tracking-[0.05em]">VIREON</div>
-                <div className="text-[9.5px] font-medium text-slate-400 uppercase tracking-[0.14em] mt-0.5">Library System</div>
-              </div>
+            <div className="flex items-center mb-4">
+              <img
+                src={VIREON_WORDMARK}
+                alt="VIREON Library"
+                className="block w-[154px] h-auto object-contain"
+                style={{ filter: "none" }}
+                loading="eager"
+                fetchPriority="high"
+                decoding="sync"
+              />
             </div>
             <p className="text-[13.5px] text-slate-500 leading-relaxed max-w-[280px] mb-5">
               Sistem manajemen perpustakaan digital yang ringan, cepat, dan mudah disukai.

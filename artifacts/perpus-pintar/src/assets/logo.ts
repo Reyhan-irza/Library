@@ -5,4 +5,5 @@
  * bundlers can track every usage.
  */
 const VIREON_LOGO = "/vireon-logo-new.png" as const;
+export const VIREON_WORDMARK = "/vireon-wordmark.png" as const;
 export default VIREON_LOGO;
