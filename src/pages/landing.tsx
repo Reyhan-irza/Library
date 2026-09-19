@@ -41,6 +41,10 @@ import {
   BookMarked,
   Clock,
   Activity,
+  ArrowUpRight,
+  BellRing,
+  CalendarDays,
+  MoreHorizontal,
 } from "lucide-react";
 import VIREON_LOGO from "@/assets/logo";
 import { useLandingStats } from "@/hooks/api";
@@ -556,10 +560,10 @@ function DashboardPreview({
   loading: boolean;
 }) {
   const cards = [
-    { label: "Total Buku", value: stats?.totalBooks, icon: BookMarked, color: "text-emerald-600", bg: "bg-emerald-50" },
-    { label: "Anggota", value: stats?.totalMembers, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Dipinjam", value: stats?.totalBorrowings, icon: ArrowLeftRight, color: "text-amber-600", bg: "bg-amber-50" },
-    { label: "Tersedia", value: stats?.availableBooks, icon: CheckCircle2, color: "text-slate-500", bg: "bg-slate-50" },
+    { label: "Total koleksi", value: stats?.totalBooks, icon: BookMarked, color: "#0f766e", bg: "#e6f6f1", change: "+12%" },
+    { label: "Anggota aktif", value: stats?.totalMembers, icon: Users, color: "#2563a9", bg: "#e9f2ff", change: "+8%" },
+    { label: "Dipinjam", value: stats?.totalBorrowings, icon: ArrowLeftRight, color: "#a16207", bg: "#fff5d9", change: "+5%" },
+    { label: "Buku tersedia", value: stats?.availableBooks, icon: CheckCircle2, color: "#64748b", bg: "#f1f5f9", change: "Stabil" },
   ];
   const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", active: true },
@@ -568,91 +572,155 @@ function DashboardPreview({
     { icon: Users, label: "Anggota", active: false },
     { icon: BarChart3, label: "Laporan", active: false },
   ];
-  const chartBars = [22, 38, 29, 52, 44, 60, 47];
+  const chartBars = [30, 42, 34, 57, 47, 68, 55];
   const maxBar = Math.max(...chartBars);
 
   return (
     <div
-      className="w-full rounded-2xl overflow-hidden border border-slate-200/80"
-      style={{ boxShadow: "0 0 0 1px rgba(0,0,0,0.04), 0 24px 64px -12px rgba(0,0,0,0.14), 0 8px 24px -8px rgba(0,0,0,0.08)" }}
+      className="w-full overflow-hidden rounded-[24px] border border-white/80 bg-[#f7faf8]"
+      style={{
+        boxShadow:
+          "0 0 0 1px rgba(15,118,110,0.08), 0 34px 90px -24px rgba(2,44,43,0.42), 0 12px 32px -14px rgba(15,23,42,0.2)",
+      }}
     >
-      <div className="flex items-center justify-between px-4 py-2.5 bg-[#f5f5f7] border-b border-slate-200/80">
+      {/* Browser chrome */}
+      <div className="flex items-center justify-between border-b border-white/10 bg-[#10201e] px-4 py-3">
         <div className="flex items-center gap-1.5" aria-hidden="true">
-          <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
-          <div className="w-3 h-3 rounded-full bg-[#FEBC2E]" />
-          <div className="w-3 h-3 rounded-full bg-[#28C840]" />
+          <div className="h-2.5 w-2.5 rounded-full bg-[#ff6b63]" />
+          <div className="h-2.5 w-2.5 rounded-full bg-[#f6c453]" />
+          <div className="h-2.5 w-2.5 rounded-full bg-[#45cf77]" />
         </div>
-        <div className="flex items-center gap-2 px-3 py-1 bg-white rounded-md border border-slate-200/60 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-          <div className="w-1.5 h-1.5 rounded-full bg-slate-300" aria-hidden="true" />
-          <span className="text-[11px] text-slate-400 font-mono">app.vireon.id/dashboard</span>
+        <div className="flex min-w-0 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.08] px-3 py-1.5">
+          <div className="h-1.5 w-1.5 rounded-full bg-emerald-300" aria-hidden="true" />
+          <span className="truncate text-[10px] font-medium tracking-wide text-white/50">app.vireon.id/dashboard</span>
         </div>
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600">
-          <Activity className="w-3 h-3" aria-hidden="true" />
-          Admin
+        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-emerald-300">
+          <Activity className="h-3 w-3" aria-hidden="true" />
+          <span className="hidden sm:inline">Workspace</span>
         </div>
       </div>
-      <div className="flex" style={{ background: "#fafafa" }}>
-        <div className="w-[108px] shrink-0 border-r border-slate-200/60 bg-white flex flex-col py-3">
-          <div className="flex items-center gap-1.5 px-3 mb-3">
-            <div className="w-5 h-5 rounded-[5px] flex items-center justify-center shrink-0" style={{ background: "hsl(161 52% 26%)" }}>
-              <BookOpen className="w-2.5 h-2.5 text-white" strokeWidth={2.5} />
+
+      {/* App surface */}
+      <div className="flex bg-[#f7faf8]">
+        <aside className="flex w-[108px] shrink-0 flex-col border-r border-slate-200/70 bg-white/90 py-4">
+          <div className="mb-5 flex items-center gap-1.5 px-3">
+            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] bg-[#116b5f] shadow-[0_3px_8px_rgba(17,107,95,0.25)]">
+              <BookOpen className="h-2.5 w-2.5 text-white" strokeWidth={2.5} />
             </div>
             <span className="text-[10px] font-extrabold tracking-[0.06em] text-slate-900">VIREON</span>
           </div>
-          <div className="flex flex-col gap-0.5 px-1.5">
+
+          <p className="mb-2 px-3 text-[7px] font-bold uppercase tracking-[0.16em] text-slate-300">Menu utama</p>
+          <div className="flex flex-col gap-1 px-1.5">
             {navItems.map(({ icon: Icon, label, active }) => (
-              <div key={label} className={`flex items-center gap-1.5 px-2 py-1.5 rounded-[6px] ${active ? "bg-[hsl(161_52%_26%/0.10)] text-[hsl(161_52%_26%)]" : "text-slate-400"}`}>
-                <Icon className="w-2.5 h-2.5 shrink-0" strokeWidth={active ? 2.25 : 1.75} />
-                <span className="text-[9px] font-medium leading-none">{label}</span>
+              <div key={label} className={`flex items-center gap-1.5 rounded-[8px] px-2 py-2 ${active ? "bg-[#e7f5f0] text-[#116b5f] shadow-[inset_0_0_0_1px_rgba(17,107,95,0.08)]" : "text-slate-400"}`}>
+                <Icon className="h-2.5 w-2.5 shrink-0" strokeWidth={active ? 2.25 : 1.75} />
+                <span className="text-[8.5px] font-semibold leading-none">{label}</span>
               </div>
             ))}
           </div>
-          <div className="mt-auto px-2.5 pt-2 border-t border-slate-100 mx-2">
+
+          <div className="mx-2 mt-auto border-t border-slate-100 px-1 pt-3">
             <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shrink-0" />
-              <div>
-                <div className="text-[8px] font-semibold text-slate-700 leading-none">Admin</div>
-                <div className="text-[7px] text-slate-400 mt-0.5 leading-none">Tim koleksi</div>
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#d6f1e8] text-[8px] font-bold text-[#116b5f]">AR</div>
+              <div className="min-w-0">
+                <div className="truncate text-[8px] font-bold leading-none text-slate-700">Admin Rani</div>
+                <div className="mt-1 truncate text-[7px] leading-none text-slate-400">Pengelola</div>
               </div>
             </div>
           </div>
-        </div>
-        <div className="flex-1 min-w-0 p-3.5">
-          <div className="flex items-center justify-between mb-3">
+        </aside>
+
+        <main className="min-w-0 flex-1 p-3.5 sm:p-4">
+          <div className="mb-3.5 flex items-start justify-between gap-3">
             <div>
-              <p className="text-[12px] font-bold text-slate-900 leading-tight">Dashboard</p>
-              <p className="text-[9.5px] text-slate-400 mt-0.5">Ruang koleksi Vireon</p>
+              <p className="text-[13px] font-bold leading-tight tracking-[-0.02em] text-slate-900">Ringkasan perpustakaan</p>
+              <p className="mt-1 text-[8.5px] text-slate-400">Pantau aktivitas ruang baca hari ini</p>
             </div>
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold" style={{ background: "hsl(161 52% 26% / 0.08)", border: "1px solid hsl(161 52% 26% / 0.2)", color: "hsl(161 52% 26%)" }}>
-              <div className="w-1 h-1 rounded-full bg-current animate-pulse" />
-              Live
+            <div className="hidden items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[8px] font-semibold text-slate-400 sm:flex">
+              <CalendarDays className="h-3 w-3 text-[#116b5f]" />
+              19 Sep 2026
             </div>
           </div>
-          <div className="grid grid-cols-4 gap-2 mb-3">
-            {cards.map(({ label, value, icon: Icon, color, bg }) => (
-              <div key={label} className="bg-white rounded-lg border border-slate-100 p-2 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-                <div className={`w-5 h-5 rounded-[5px] ${bg} flex items-center justify-center mb-1.5`}>
-                  <Icon className={`w-2.5 h-2.5 ${color}`} strokeWidth={2} />
+
+          <div className="mb-3 grid grid-cols-4 gap-1.5 sm:gap-2">
+            {cards.map(({ label, value, icon: Icon, color, bg, change }) => (
+              <div key={label} className="min-w-0 rounded-xl border border-slate-200/70 bg-white p-2 shadow-[0_3px_10px_rgba(15,23,42,0.035)] sm:p-2.5">
+                <div className="mb-2 flex items-start justify-between gap-1">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-[6px]" style={{ background: bg }}>
+                    <Icon className="h-2.5 w-2.5" style={{ color }} strokeWidth={2} />
+                  </div>
+                  <ArrowUpRight className="hidden h-2.5 w-2.5 text-slate-300 sm:block" />
                 </div>
                 {loading ? <div className="h-3.5 w-8 bg-slate-200 rounded animate-pulse mb-0.5" /> : (
-                  <p className="text-[13px] font-extrabold text-slate-900 tabular-nums leading-none">{fmt(value ?? 0)}</p>
+                  <p className="text-[15px] font-extrabold leading-none tracking-[-0.03em] text-slate-900 tabular-nums">{fmt(value ?? 0)}</p>
                 )}
-                <p className="text-[8px] text-slate-400 font-medium mt-0.5 leading-tight">{label}</p>
+                <p className="mt-1 text-[7px] font-semibold leading-tight text-slate-400 sm:text-[8px]">{label}</p>
+                <p className="mt-1.5 hidden text-[7px] font-bold text-[#18836f] sm:block">{change}</p>
               </div>
             ))}
           </div>
-          <div className="bg-white rounded-lg border border-slate-100 p-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[9.5px] font-semibold text-slate-700">Tren Peminjaman</p>
-              <span className="text-[8px] text-slate-400">7 bulan terakhir</span>
+
+          <div className="grid gap-2.5 md:grid-cols-[1.25fr_0.85fr]">
+            <div className="rounded-xl border border-slate-200/70 bg-white p-2.5 shadow-[0_3px_10px_rgba(15,23,42,0.035)] sm:p-3">
+              <div className="mb-2.5 flex items-center justify-between">
+                <div>
+                  <p className="text-[9.5px] font-bold text-slate-700">Aktivitas peminjaman</p>
+                  <p className="mt-0.5 text-[7.5px] text-slate-400">Tren 7 bulan terakhir</p>
+                </div>
+                <button type="button" aria-label="Opsi grafik" className="rounded-md p-1 text-slate-300">
+                  <MoreHorizontal className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="relative h-[58px]">
+                <div className="absolute inset-x-0 top-0 border-t border-dashed border-slate-100" />
+                <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-slate-100" />
+                <div className="absolute inset-x-0 bottom-0 border-t border-slate-100" />
+                <div className="absolute inset-x-0 bottom-0 flex h-full items-end gap-1.5 px-0.5">
+                  {chartBars.map((h, i) => (
+                    <div key={i} className="relative flex h-full flex-1 items-end">
+                      <div className="w-full rounded-t-[5px] transition-all" style={{ height: `${(h / maxBar) * 100}%`, background: i === chartBars.length - 1 ? "linear-gradient(to top, #116b5f, #42b99d)" : "linear-gradient(to top, #c9e5dd, #e2f3ee)" }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-1.5 flex justify-between px-0.5 text-[7px] font-medium text-slate-300">
+                {["Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep"].map(month => <span key={month}>{month}</span>)}
+              </div>
             </div>
-            <div className="flex items-end gap-1 h-9">
-              {chartBars.map((h, i) => (
-                <div key={i} className="flex-1 rounded-sm transition-all" style={{ height: `${(h / maxBar) * 100}%`, background: i === chartBars.length - 1 ? "hsl(161 52% 30%)" : "hsl(161 52% 30% / 0.25)" }} />
-              ))}
+
+            <div className="hidden rounded-xl border border-slate-200/70 bg-white p-3 shadow-[0_3px_10px_rgba(15,23,42,0.035)] md:block">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[9.5px] font-bold text-slate-700">Aktivitas terbaru</p>
+                <BellRing className="h-3 w-3 text-[#18836f]" />
+              </div>
+              <div className="space-y-2.5">
+                {[
+                  { label: "Koleksi diperbarui", meta: "12 buku baru", tone: "#18836f" },
+                  { label: "Peminjaman aktif", meta: "Perlu dipantau", tone: "#c27b18" },
+                  { label: "Laporan siap", meta: "September 2026", tone: "#5f76b6" },
+                ].map(item => (
+                  <div key={item.label} className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: item.tone }} />
+                    <div className="min-w-0">
+                      <p className="truncate text-[8px] font-semibold text-slate-600">{item.label}</p>
+                      <p className="mt-0.5 truncate text-[7px] text-slate-400">{item.meta}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+          <div className="mt-3 flex items-center justify-between rounded-lg bg-[#e8f5f0] px-2.5 py-2">
+            <div className="flex items-center gap-1.5">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#bfe7d8]">
+                <Activity className="h-2.5 w-2.5 text-[#116b5f]" />
+              </span>
+              <span className="text-[7.5px] font-semibold text-[#116b5f]">Semua sistem berjalan normal</span>
+            </div>
+            <span className="flex items-center gap-1 text-[7px] font-bold text-[#18836f]"><span className="h-1 w-1 animate-pulse rounded-full bg-[#18836f]" /> Live</span>
+          </div>
+        </main>
       </div>
     </div>
   );
