@@ -1,2 +1,3 @@
 - [Perpus Pintar - Supabase Migration](perpus-pintar-supabase.md) — app selesai di artifacts/perpus-pintar; Supabase connected, schema SQL di supabase/schema.sql, GitHub push perlu GitHub auth di Replit.
 - [Vireon brand direction](vireon-brand-direction.md) — identitas harus netral dari sekolah, motion scroll-linked dan reduced-motion aware, copy terasa natural, kredit developer tetap terlihat.
+- [GitHub credential precedence](github-credential-precedence.md) — stale GITHUB_TOKEN can override connected GitHub auth; validate the active path before CLI pushes.
