@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import VIREON_LOGO from "@/assets/logo";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,6 +6,7 @@ import {
   LayoutDashboard, BookOpen, ArrowLeftRight, Users, FolderOpen,
   Archive, UserCog, Heart, User, BarChart3, LogOut, Moon, Sun,
   Bell, Menu, X, ChevronRight, Search, ChevronDown, Library,
+  AlertTriangle, Clock3, RefreshCw, ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/theme-provider";
@@ -177,10 +178,33 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
 
 /* ── Desktop + mobile Header ────────────────────────────────────────────── */
 function Header({ onMenuClick }: { onMenuClick: () => void }) {
-  const { data: notifications } = useGetNotifications();
+  const { data: notifications, isLoading: notificationsLoading, isError: notificationsError, refetch: refetchNotifications } = useGetNotifications();
   const unread = (notifications ?? []).filter(n => !n.read).length;
   const { theme, toggleTheme } = useTheme();
   const user = getUser();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!notificationsOpen) return;
+
+    function closeOnOutsideClick(event: MouseEvent) {
+      if (!notificationsRef.current?.contains(event.target as Node)) {
+        setNotificationsOpen(false);
+      }
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setNotificationsOpen(false);
+    }
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [notificationsOpen]);
 
   return (
     <header className="h-14 sticky top-0 z-20 glass border-b border-border/40 flex items-center gap-3 px-4">
@@ -221,12 +245,112 @@ function Header({ onMenuClick }: { onMenuClick: () => void }) {
       {/* Right actions */}
       <div className="flex items-center gap-1">
         {/* Notifications */}
-        <button className="relative p-2 rounded-xl hover:bg-accent transition-colors text-foreground/70 hover:text-foreground">
-          <Bell size={16} />
-          {unread > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-background" />
-          )}
-        </button>
+        <div ref={notificationsRef} className="relative">
+          <button
+            onClick={() => setNotificationsOpen(open => !open)}
+            className="relative p-2 rounded-xl hover:bg-accent transition-colors text-foreground/70 hover:text-foreground"
+            aria-label={`Notifikasi${unread > 0 ? `, ${unread} belum dibaca` : ""}`}
+            aria-expanded={notificationsOpen}
+            aria-haspopup="dialog"
+          >
+            <Bell size={16} />
+            {unread > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center bg-rose-500 text-white text-[9px] font-bold rounded-full ring-2 ring-background">
+                {unread > 99 ? "99+" : unread}
+              </span>
+            )}
+          </button>
+
+          <AnimatePresence>
+            {notificationsOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                transition={{ duration: 0.16 }}
+                role="dialog"
+                aria-label="Notifikasi"
+                className="absolute right-0 top-full mt-2 z-50 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl"
+              >
+                <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-bold text-foreground">Notifikasi</p>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      Pengingat peminjaman yang perlu ditindaklanjuti
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => void refetchNotifications()}
+                    disabled={notificationsLoading}
+                    className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+                    aria-label="Segarkan notifikasi"
+                    title="Segarkan"
+                  >
+                    <RefreshCw size={14} className={notificationsLoading ? "animate-spin" : ""} />
+                  </button>
+                </div>
+
+                <div className="max-h-[min(360px,60vh)] overflow-y-auto p-2">
+                  {notificationsLoading && unread === 0 ? (
+                    <div className="flex items-center justify-center gap-2 px-3 py-8 text-xs text-muted-foreground">
+                      <RefreshCw size={14} className="animate-spin" />
+                      Memuat notifikasi…
+                    </div>
+                  ) : notificationsError ? (
+                    <div className="px-3 py-8 text-center">
+                      <AlertTriangle size={18} className="mx-auto mb-2 text-amber-500" />
+                      <p className="text-xs font-semibold text-foreground">Notifikasi belum dapat dimuat</p>
+                      <p className="mt-1 text-[10px] text-muted-foreground">Coba segarkan kembali.</p>
+                    </div>
+                  ) : notifications?.length ? (
+                    notifications.map(notification => {
+                      const isOverdue = notification.type === "overdue";
+                      return (
+                        <Link
+                          key={notification.id}
+                          href="/borrowings"
+                          onClick={() => setNotificationsOpen(false)}
+                          className="flex items-start gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-muted"
+                        >
+                          <span className={cn(
+                            "mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl",
+                            isOverdue ? "bg-rose-500/12 text-rose-500" : "bg-amber-500/12 text-amber-500",
+                          )}>
+                            {isOverdue ? <AlertTriangle size={15} /> : <Clock3 size={15} />}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-xs font-semibold text-foreground">{notification.title}</span>
+                            <span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">
+                              {notification.message}
+                            </span>
+                          </span>
+                          <ArrowRight size={13} className="mt-1 flex-shrink-0 text-muted-foreground/60" />
+                        </Link>
+                      );
+                    })
+                  ) : (
+                    <div className="px-3 py-8 text-center">
+                      <Bell size={20} className="mx-auto mb-2 text-emerald-500/70" />
+                      <p className="text-xs font-semibold text-foreground">Tidak ada notifikasi</p>
+                      <p className="mt-1 text-[10px] text-muted-foreground">Semua peminjaman masih aman.</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-border/60 px-4 py-2.5">
+                  <Link
+                    href="/borrowings"
+                    onClick={() => setNotificationsOpen(false)}
+                    className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-primary transition-colors hover:text-primary/80"
+                  >
+                    Buka semua peminjaman
+                    <ArrowRight size={12} />
+                  </Link>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Theme toggle */}
         <button

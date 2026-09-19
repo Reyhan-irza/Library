@@ -10,7 +10,7 @@ import type {
   StaffMember, StaffInput, StaffUpdate,
   DashboardStats, ChartData, TopBook, Activity, Notification, ReportSummary,
 } from '@/types';
-import { differenceInDays, parseISO, addDays, format } from 'date-fns';
+import { differenceInDays, differenceInCalendarDays, parseISO, addDays, format } from 'date-fns';
 
 // ── Query Keys ────────────────────────────────────────────────────────────
 
@@ -675,7 +675,6 @@ export function useGetNotifications() {
   return useQuery({
     queryKey: getNotificationsQueryKey(),
     queryFn: async () => {
-      const today = new Date();
       const { data, error } = await supabase
         .from('borrowings')
         .select('id, due_date, return_date, status, members(name), books(title)')
@@ -685,13 +684,15 @@ export function useGetNotifications() {
       const notifications: Notification[] = [];
       (data ?? []).forEach((b: any, idx: number) => {
         const due = parseISO(b.due_date);
-        const diff = differenceInDays(due, today);
+        const diff = differenceInCalendarDays(due, new Date());
+        const memberName = b.members?.name ?? 'Anggota';
+        const bookTitle = b.books?.title ?? 'Buku';
         if (diff < 0) {
           notifications.push({
             id: idx,
             type: 'overdue',
             title: 'Buku Terlambat',
-            message: `${b.members?.name} – ${b.books?.title} (${Math.abs(diff)} hari)`,
+            message: `${memberName} – ${bookTitle} (${Math.abs(diff)} hari)`,
             read: false,
           });
         } else if (diff <= 3) {
@@ -699,13 +700,16 @@ export function useGetNotifications() {
             id: idx + 1000,
             type: 'due_soon',
             title: 'Jatuh Tempo Segera',
-            message: `${b.members?.name} – ${b.books?.title} (${diff} hari lagi)`,
+            message: `${memberName} – ${bookTitle} (${diff === 0 ? 'hari ini' : `${diff} hari lagi`})`,
             read: false,
           });
         }
       });
       return notifications;
     },
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   });
 }
 
