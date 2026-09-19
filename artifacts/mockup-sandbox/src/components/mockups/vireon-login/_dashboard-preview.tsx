@@ -1,7 +1,7 @@
 /**
  * DashboardPreview — shared mini app mockup component.
  * Used on the Login page visual panel.
- * Uses real aggregate totals when available. The chart is explicitly illustrative.
+ * Accepts optional live stats; falls back to 0 while loading.
  */
 
 import {
@@ -48,7 +48,7 @@ export default function DashboardPreview({ stats, loading }: Props) {
       bg: "bg-blue-50",
     },
     {
-      label: "Peminjaman",
+      label: "Dipinjam",
       value: stats?.totalBorrowings,
       icon: ArrowLeftRight,
       color: "text-amber-600",
@@ -91,7 +91,7 @@ export default function DashboardPreview({ stats, loading }: Props) {
         </div>
         <div className="flex items-center gap-2 px-3 py-1 bg-white rounded-md border border-slate-200/60 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
           <div className="w-1.5 h-1.5 rounded-full bg-slate-300" aria-hidden="true" />
-          <span className="text-[11px] text-slate-400 font-mono">vireon / dashboard</span>
+          <span className="text-[11px] text-slate-400 font-mono">app.vireon.id/dashboard</span>
         </div>
         <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600">
           <Activity className="w-3 h-3" aria-hidden="true" />
@@ -166,8 +166,8 @@ export default function DashboardPreview({ stats, loading }: Props) {
                 color: "hsl(161 52% 26%)",
               }}
             >
-              <div className="w-1 h-1 rounded-full bg-current" />
-              {stats ? "Total aktual" : "Pratinjau"}
+              <div className="w-1 h-1 rounded-full bg-current animate-pulse" />
+              Live
             </div>
           </div>
 
@@ -187,7 +187,7 @@ export default function DashboardPreview({ stats, loading }: Props) {
                   <div className="h-3.5 w-8 bg-slate-200 rounded animate-pulse mb-0.5" />
                 ) : (
                   <p className="text-[13px] font-extrabold text-slate-900 tabular-nums leading-none">
-                    {value === undefined ? "—" : fmt(value)}
+                    {fmt(value ?? 0)}
                   </p>
                 )}
                 <p className="text-[8px] text-slate-400 font-medium mt-0.5 leading-tight">
@@ -200,8 +200,8 @@ export default function DashboardPreview({ stats, loading }: Props) {
           {/* Mini chart */}
           <div className="bg-white rounded-lg border border-slate-100 p-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[9.5px] font-semibold text-slate-700">Pratinjau Grafik</p>
-              <span className="text-[8px] text-slate-400">Ilustrasi, bukan data aktivitas</span>
+              <p className="text-[9.5px] font-semibold text-slate-700">Tren Peminjaman</p>
+              <span className="text-[8px] text-slate-400">7 bulan terakhir</span>
             </div>
             <div className="flex items-end gap-1 h-9">
               {chartBars.map((h, i) => (

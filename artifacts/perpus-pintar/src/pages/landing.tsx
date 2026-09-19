@@ -11,7 +11,6 @@ import {
   useMotionValue,
   useSpring,
   useInView,
-  useAnimation,
 } from "framer-motion";
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
@@ -41,6 +40,7 @@ import {
 import VIREON_LOGO from "@/assets/logo";
 import { useLandingStats } from "@/hooks/api";
 import { CustomCursor } from "@/components/custom-cursor";
+import "@/components/landing-marquee.css";
 import {
   LandingMobileMenu,
   MobileMenuMark,
@@ -268,7 +268,6 @@ const MARQUEE_ITEMS = [
   "Manajemen Anggota", "Statistik Bulanan", "Enkripsi Data",
   "Antarmuka Intuitif", "Denda Otomatis",
 ];
-const MARQUEE_DURATION = 20;
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -802,37 +801,30 @@ function HeroSection() {
 }
 
 // ─── Marquee Ticker ───────────────────────────────────────────────────────────
-// Pauses on hover using AnimationControls
+// A content-width duplicated track loops seamlessly; hover pauses in place.
 
 function MarqueeTicker() {
-  const doubled = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS];
-  const reduced = useReducedMotion();
-  const controls = useAnimation();
-
-  useEffect(() => {
-    if (reduced) return;
-    controls.start({ x: ["0%", "-50%"], transition: { duration: MARQUEE_DURATION, repeat: Infinity, ease: "linear" } });
-  }, [controls, reduced]);
-
   return (
     <div
-      className="relative py-3.5 overflow-hidden border-y border-slate-200/60"
+      className="vireon-marquee relative py-3.5 overflow-hidden border-y border-slate-200/60"
       style={{ background: "hsl(161 52% 26%)" }}
       aria-hidden="true"
-      onMouseEnter={() => !reduced && controls.stop()}
-      onMouseLeave={() => !reduced && controls.start({ x: ["0%", "-50%"], transition: { duration: MARQUEE_DURATION, repeat: Infinity, ease: "linear" } })}
     >
       <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none" style={{ background: "linear-gradient(to right, hsl(161 52% 26%), transparent)" }} />
       <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none" style={{ background: "linear-gradient(to left, hsl(161 52% 26%), transparent)" }} />
 
-      <motion.div animate={controls} className="flex items-center whitespace-nowrap">
-        {doubled.map((item, i) => (
-          <div key={i} className="flex items-center gap-5 px-5">
-            <span className="text-[11.5px] font-semibold text-white/70 tracking-[0.06em] uppercase">{item}</span>
-            <div className="w-[3px] h-[3px] rounded-full shrink-0" style={{ background: "rgba(255,255,255,0.35)" }} />
+      <div className="vireon-marquee-track flex w-max items-center whitespace-nowrap" data-testid="landing-marquee-track">
+        {[0, 1].map((copy) => (
+          <div key={copy} className="flex shrink-0 items-center">
+            {MARQUEE_ITEMS.map((item) => (
+              <div key={item} className="flex shrink-0 items-center gap-5 px-5">
+                <span className="text-[11.5px] font-semibold text-white/70 tracking-[0.06em] uppercase">{item}</span>
+                <div className="w-[3px] h-[3px] rounded-full shrink-0" style={{ background: "rgba(255,255,255,0.35)" }} />
+              </div>
+            ))}
           </div>
         ))}
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -852,9 +844,9 @@ function AnimatedStatCard({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
-  const resolvedValue = value ?? 0;
-  const isZero = !isLoading && resolvedValue === 0;
-  const count = useCountUp(resolvedValue, isInView && !isLoading, 1.8, reduced);
+  const hasValue = value !== undefined;
+  const isZero = !isLoading && value === 0;
+  const count = useCountUp(value ?? 0, isInView && !isLoading && hasValue, 1.2, reduced);
 
   // Four distinctly different entrance styles
   const entries = [
@@ -873,7 +865,7 @@ function AnimatedStatCard({
       whileHover={reduced ? {} : { y: -3, transition: { duration: 0.2, ease: E_OUT } }}
       className="group relative px-6 py-9 transition-colors duration-200 hover:bg-[hsl(161_52%_26%/0.018)] lg:px-8"
       role="group"
-      aria-label={`${label}: ${fmt(resolvedValue)}`}
+      aria-label={`${label}: ${isLoading ? "memuat" : hasValue ? fmt(value) : "belum tersedia"}`}
       data-testid={`stat-landing-${index}`}
     >
       <div
@@ -904,10 +896,7 @@ function AnimatedStatCard({
               }`}
               data-testid={`text-landing-stat-value-${index}`}
             >
-              {fmt(count)}
-              {resolvedValue > 0 && (
-                <span className="ml-0.5 text-base font-bold" style={{ color: "hsl(161 52% 38%)" }}>+</span>
-              )}
+              {hasValue ? fmt(count) : "—"}
             </p>
             {isZero && (
               <span className="mb-0.5 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/80 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.08em] text-slate-400 transition-[border-color,color] duration-200 group-hover:border-emerald-200 group-hover:text-emerald-700">
@@ -929,18 +918,18 @@ function AnimatedStatCard({
 }
 
 function StatsSection() {
-  const { data: stats, isLoading } = useLandingStats();
+  const { data: stats, isLoading, isError, isFetching, refetch } = useLandingStats();
   const reduced = useReducedMotion();
 
   const items = [
     { label: "Total Koleksi Buku", value: stats?.totalBooks, icon: BookMarked },
     { label: "Anggota Terdaftar", value: stats?.totalMembers, icon: Users },
     { label: "Total Peminjaman", value: stats?.totalBorrowings, icon: ArrowLeftRight },
-    { label: "Buku Tersedia", value: stats?.availableBooks, icon: CheckCircle2 },
+    { label: "Judul Buku Tersedia", value: stats?.availableBooks, icon: CheckCircle2 },
   ];
 
   return (
-    <section className="border-b border-slate-100">
+    <section className="border-b border-slate-100" aria-label="Statistik perpustakaan">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-slate-100">
           {items.map(({ label, value, icon }, i) => (
@@ -954,6 +943,32 @@ function StatsSection() {
               reduced={reduced ?? false}
             />
           ))}
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-6 py-3 lg:px-8">
+          <p className="flex items-center gap-2 text-[11px] text-slate-500" role="status" aria-live="polite">
+            <span
+              className={`h-1.5 w-1.5 shrink-0 rounded-full ${isError ? "bg-amber-400" : stats ? "bg-emerald-500" : "bg-slate-300"}`}
+              aria-hidden="true"
+            />
+            {isLoading
+              ? "Mengambil total perpustakaan…"
+              : isError
+                ? stats
+                  ? "Menampilkan data terakhir. Pembaruan belum berhasil."
+                  : "Total perpustakaan belum dapat dimuat."
+                : "Data asli perpustakaan · diperbarui otomatis"}
+          </p>
+          {isError && (
+            <button
+              type="button"
+              onClick={() => void refetch()}
+              disabled={isFetching}
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-50 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+            >
+              <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+              {isFetching ? "Memuat…" : "Coba lagi"}
+            </button>
+          )}
         </div>
       </div>
     </section>

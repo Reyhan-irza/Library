@@ -1,27 +1,12 @@
 ---
-name: Perpus Pintar Supabase Migration
-description: Status migrasi aplikasi perpustakaan ke Supabase — keputusan arsitektur dan langkah setup yang tersisa.
+name: Supabase ownership
+description: Why the existing Supabase project remains the source of truth for VIREON library data and authentication.
 ---
 
-# Perpus Pintar – Status Migrasi
+# Supabase ownership
 
-**Why:** Migrasi dari Express/JWT custom API ke Supabase Auth + PostgreSQL + RLS.
+Keep the existing Supabase project as the source of truth for library records and authentication. Do not populate or reconnect the scaffold database as a workaround for a missing Supabase permission or migration.
 
-## Selesai
-- Semua file ditulis di `artifacts/perpus-pintar/src/`
-- `@supabase/supabase-js` terinstall
-- VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY disimpan sebagai shared env vars
-- App berjalan bersih (no Supabase warning di console)
-- Supabase: `https://kptnxmdergqdbgjxgong.supabase.co`
+**Why:** This project deliberately migrated away from a custom Express/JWT stack. Keeping two stores would make landing totals, stock, and signed-in records disagree.
 
-## Tersisa untuk User
-1. **Jalankan schema SQL** di Supabase Dashboard → SQL Editor → paste `supabase/schema.sql`
-2. **Buat user pertama** via Supabase Dashboard → Authentication → Add User
-3. **GitHub push** — user perlu connect GitHub account di Replit Settings dulu (NO_CREDENTIALS error)
-4. **Nonaktifkan email confirmation** di Supabase → Auth → Email → "Confirm email" → OFF (agar staff creation bekerja)
-
-## Keputusan Arsitektur
-- Login pakai email (bukan username) karena Supabase Auth
-- `borrow_book()` dan `return_book()` adalah PostgreSQL RPC SECURITY DEFINER (atomic stock update)
-- `src/hooks/api.ts` = compatibility layer, same interface as lama
-- `src/lib/auth.ts` cache user di localStorage, session token dikelola Supabase
+**How to apply:** Inspect the current Supabase flow first. Apply incremental changes to that project through authorized access rather than replacing the database or re-running the entire initial schema.

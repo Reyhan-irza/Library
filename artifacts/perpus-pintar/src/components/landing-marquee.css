@@ -1,0 +1,23 @@
+.vireon-marquee-track {
+  animation: vireon-marquee-scroll 12s linear infinite;
+  will-change: transform;
+}
+
+.vireon-marquee:hover .vireon-marquee-track,
+.vireon-marquee:focus-within .vireon-marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes vireon-marquee-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vireon-marquee-track {
+    animation: none;
+    transform: none;
+    will-change: auto;
+  }
+}

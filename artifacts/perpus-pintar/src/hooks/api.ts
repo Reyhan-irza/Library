@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { setUser, clearUser, getUser } from '@/lib/auth';
+import { parseLandingStats, type LandingStats } from '@/lib/public-stats';
 import type {
   Book, BookInput, BookUpdate,
   Category, CategoryInput,
@@ -783,33 +784,17 @@ export function useChangePassword() {
   });
 }
 
-// ── Landing page stats (public — graceful fallback on RLS block) ──────────
+// ── Landing page stats (public aggregates, never private table reads) ──────
 
-export interface LandingStats {
-  totalBooks: number;
-  totalMembers: number;
-  totalBorrowings: number;
-  availableBooks: number;
-}
+export type { LandingStats } from '@/lib/public-stats';
 
 export function useLandingStats() {
   return useQuery<LandingStats>({
     queryKey: getLandingStatsQueryKey(),
     queryFn: async (): Promise<LandingStats> => {
-      const [booksRes, membersRes, borrowingsRes, availRes] = await Promise.allSettled([
-        supabase.from('books').select('*', { count: 'exact', head: true }),
-        supabase.from('members').select('*', { count: 'exact', head: true }),
-        supabase.from('borrowings').select('*', { count: 'exact', head: true }),
-        supabase.from('books').select('*', { count: 'exact', head: true }).gt('available_stock', 0),
-      ]);
-      const getCount = (res: PromiseSettledResult<{ count: number | null; data: unknown; error: unknown }>) =>
-        res.status === 'fulfilled' ? (res.value.count ?? 0) : 0;
-      return {
-        totalBooks:      getCount(booksRes as PromiseSettledResult<{ count: number | null; data: unknown; error: unknown }>),
-        totalMembers:    getCount(membersRes as PromiseSettledResult<{ count: number | null; data: unknown; error: unknown }>),
-        totalBorrowings: getCount(borrowingsRes as PromiseSettledResult<{ count: number | null; data: unknown; error: unknown }>),
-        availableBooks:  getCount(availRes as PromiseSettledResult<{ count: number | null; data: unknown; error: unknown }>),
-      };
+      const { data, error } = await supabase.rpc('get_public_library_stats');
+      if (error) throw error;
+      return parseLandingStats(data);
     },
     retry: false,
     // The dashboard can change these values moments before the visitor returns
@@ -822,7 +807,7 @@ export function useLandingStats() {
     // Also covers changes made from another dashboard tab/session where the
     // local QueryClient cannot receive the mutation invalidation directly.
     refetchInterval: 30_000,
-    refetchIntervalInBackground: true,
+    refetchIntervalInBackground: false,
   });
 }
 

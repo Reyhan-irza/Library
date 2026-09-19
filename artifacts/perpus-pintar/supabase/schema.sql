@@ -170,6 +170,30 @@ create policy "Authenticated users can read borrowings"
 create policy "Authenticated users can manage borrowings"
   on borrowings for all using (auth.role() = 'authenticated');
 
+-- ── Public aggregate statistics ───────────────────────────────────────────
+-- Existing projects: apply migrations/202609190001_public_library_stats.sql
+-- instead of re-running the full schema. Keep private-table RLS unchanged.
+create or replace function public.get_public_library_stats()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select pg_catalog.jsonb_build_object(
+    'totalBooks', (select count(*) from public.books),
+    'totalMembers', (select count(*) from public.members),
+    'totalBorrowings', (select count(*) from public.borrowings),
+    'availableBooks', (select count(*) from public.books where available_stock > 0)
+  );
+$$;
+
+revoke all on function public.get_public_library_stats() from public;
+grant execute on function public.get_public_library_stats() to anon, authenticated;
+
+comment on function public.get_public_library_stats() is
+  'Public aggregate counts only. Books are distinct titles, available books are titles with stock > 0. No member or borrowing records are exposed.';
+
 -- ── Favorites ─────────────────────────────────────────────────────────────
 create table if not exists favorites (
   id          serial primary key,
