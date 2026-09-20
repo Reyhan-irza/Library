@@ -51,3 +51,7 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Local references and visual verification artifacts
+attached_assets/
+screenshots/
