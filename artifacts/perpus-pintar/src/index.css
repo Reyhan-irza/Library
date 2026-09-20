@@ -372,6 +372,35 @@ input:focus, textarea:focus, select:focus {
   background-size: 256px 256px;
 }
 
+/* ─── EDITORIAL LIBRARY MOTIFS ───────────────────────────────────────────── */
+/* Lightweight CSS motifs used by the public landing and login surfaces. */
+.vireon-dot-field {
+  background-image: radial-gradient(circle, hsl(161 52% 30% / 0.2) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.vireon-line-field {
+  background-image:
+    linear-gradient(90deg, hsl(161 52% 30% / 0.07) 1px, transparent 1px),
+    linear-gradient(hsl(161 52% 30% / 0.07) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+.vireon-dark-line-field {
+  background-image:
+    linear-gradient(90deg, rgba(180, 242, 222, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(180, 242, 222, 0.08) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.vireon-ring-motif {
+  border: 1px solid hsl(161 52% 36% / 0.18);
+  border-radius: 9999px;
+  box-shadow:
+    0 0 0 12px hsl(161 52% 36% / 0.04),
+    0 0 0 28px hsl(161 52% 36% / 0.025);
+}
+
 /* ─── SCROLL PROGRESS BAR ─────────────────────────────────────────────────── */
 .vireon-progress {
   position: fixed;
