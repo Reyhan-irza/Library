@@ -28,7 +28,7 @@ export default defineConfig({
           (await import('@replit/vite-plugin-runtime-error-modal')).default(),
           await import('@replit/vite-plugin-cartographer').then((m) =>
             m.cartographer({
-              root: path.resolve(__dirname, '..'),
+              root: path.resolve(__dirname),
             }),
           ),
           await import('@replit/vite-plugin-dev-banner').then((m) =>
@@ -45,8 +45,7 @@ export default defineConfig({
   },
   root: path.resolve(__dirname),
   build: {
-    // Output directory untuk Vercel: artifacts/perpus-pintar/dist
-    // Sesuai dengan outputDirectory di vercel.json (artifacts/perpus-pintar/dist)
+    // Vercel and Replit both serve the root dist directory.
     outDir: path.resolve(__dirname, 'dist'),
     emptyOutDir: true,
   },

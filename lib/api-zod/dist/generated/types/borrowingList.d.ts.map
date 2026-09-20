@@ -1,1 +1,0 @@
-{"version":3,"file":"borrowingList.d.ts","sourceRoot":"","sources":["../../../src/generated/types/borrowingList.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AACH,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,aAAa,CAAC;AAE7C,MAAM,WAAW,aAAa;IAC5B,IAAI,EAAE,SAAS,EAAE,CAAC;IAClB,KAAK,EAAE,MAAM,CAAC;IACd,IAAI,EAAE,MAAM,CAAC;IACb,KAAK,EAAE,MAAM,CAAC;CACf"}

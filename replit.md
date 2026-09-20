@@ -1,45 +1,49 @@
-# [Project name]
+# Vireon Library
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Vireon is a React and Vite library management app with a public catalog,
+member borrowing flows, and librarian administration.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `pnpm run dev` — run the Vite development server
+- `pnpm run typecheck` — typecheck the application
+- `pnpm run build` — build the production bundle
+- `pnpm run serve` — preview the production bundle
+- Supabase environment variables are documented in `.env.example`
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Node.js 24, pnpm, TypeScript 5.9
+- React + Vite
+- Supabase for authentication, database access, and storage
+- Tailwind CSS and Radix UI
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `src/` contains the client application and its domain pages.
+- `supabase/schema.sql` is the database schema reference.
+- `supabase/migrations/` contains ordered database changes.
+- `vercel.json` is the source of truth for Vercel's root build.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The repository is intentionally a single-root Vite app rather than a monorepo.
+- Supabase remains the source of truth for library data and authentication.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Public catalog and book detail views
+- Member authentication, borrowing requests, favorites, and request status
+- Admin dashboards for books, members, staff, racks, reports, and borrowing workflows
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+Keep the Vercel build rooted at `pnpm run build` with `dist/` as the output.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Run `pnpm run typecheck` and `pnpm run build` after configuration changes.
 
 ## Pointers
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- See `README.md` for the root project workflow.

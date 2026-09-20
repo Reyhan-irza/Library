@@ -1,1 +1,0 @@
-{"version":3,"file":"notificationList.d.ts","sourceRoot":"","sources":["../../../src/generated/types/notificationList.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AACH,OAAO,KAAK,EAAE,YAAY,EAAE,MAAM,gBAAgB,CAAC;AAEnD,MAAM,WAAW,gBAAgB;IAC/B,IAAI,EAAE,YAAY,EAAE,CAAC;IACrB,WAAW,EAAE,MAAM,CAAC;CACrB"}

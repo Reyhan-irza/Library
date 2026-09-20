@@ -1,6 +1,6 @@
 {
-  "buildCommand": "pnpm --filter @workspace/perpus-pintar run build",
-  "outputDirectory": "artifacts/perpus-pintar/dist",
+  "buildCommand": "pnpm run build",
+  "outputDirectory": "dist",
   "installCommand": "pnpm install --frozen-lockfile",
   "framework": null,
   "rewrites": [

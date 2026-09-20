@@ -51,7 +51,13 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+.agents/
 
 # Local references and visual verification artifacts
 attached_assets/
 screenshots/
+
+# Root Vite output
+/dist
+/.vite
+*.tsbuildinfo
