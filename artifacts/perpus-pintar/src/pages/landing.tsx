@@ -356,9 +356,11 @@ function LandingNav() {
             {[{ label: "Cara Kerja", id: "how" }, { label: "Fitur", id: "features" }, { label: "Tentang", id: "about" }].map(({ label, id }) => (
               <button key={id} onClick={() => handleScroll(id)} className={navItem}>{label}</button>
             ))}
+            <Link href="/catalog" className={navItem}>Katalog</Link>
           </nav>
 
           <div className="hidden md:flex items-center gap-2">
+            <Link href="/catalog" className={navItem}>Jelajahi Koleksi</Link>
             <Link href="/login" className={navItem}>Masuk</Link>
             <Link
               href="/login"

@@ -2,6 +2,7 @@
 
 export interface Book {
   id: number;
+  bookCode?: string | null;
   isbn: string;
   title: string;
   author: string;
@@ -96,16 +97,25 @@ export interface MemberInput {
 
 export interface Borrowing {
   id: number;
-  memberId: number;
+  memberId?: number | null;
   bookId: number;
   memberName: string;
   memberNumber: string;
+  requesterName?: string | null;
+  requesterClass?: string | null;
+  requesterStudentId?: string | null;
   bookTitle: string;
   bookIsbn: string;
   borrowDate: string;
-  dueDate: string;
+  dueDate?: string | null;
   returnDate?: string | null;
-  status: 'borrowed' | 'returned' | 'overdue';
+  status: 'pending' | 'approved' | 'rejected' | 'borrowed' | 'returned' | 'overdue' | 'cancelled';
+  quantity: number;
+  requestCode?: string | null;
+  borrowingMethod: 'SELF_SERVICE' | 'ADMIN_ASSISTED';
+  borrowingType: 'PERSONAL' | 'CLASS_REPRESENTATIVE';
+  approvedAt?: string | null;
+  rejectionReason?: string | null;
   fine?: number;
   notes?: string | null;
   createdAt?: string;
@@ -114,8 +124,61 @@ export interface Borrowing {
 export interface BorrowingInput {
   memberId: number;
   bookId: number;
+  quantity?: number;
+  borrowingType?: 'PERSONAL' | 'CLASS_REPRESENTATIVE';
   dueDate: string;
   notes?: string;
+}
+
+export interface PublicCatalogBook {
+  id: number;
+  bookCode?: string | null;
+  isbn: string;
+  title: string;
+  author: string;
+  publisher?: string | null;
+  publicationYear?: number | null;
+  description?: string | null;
+  pages?: number | null;
+  coverUrl?: string | null;
+  categoryId?: number | null;
+  categoryName?: string | null;
+  rackId?: number | null;
+  rackName?: string | null;
+  totalCopies: number;
+  availableCopies: number;
+  availabilityStatus: 'AVAILABLE' | 'OUT_OF_STOCK';
+}
+
+export interface PublicBorrowRequestInput {
+  bookId: number;
+  quantity: number;
+  borrowingType: 'PERSONAL' | 'CLASS_REPRESENTATIVE';
+  requesterName: string;
+  requesterClass: string;
+  requesterStudentId: string;
+  requesterContact?: string;
+  notes?: string;
+}
+
+export interface PublicBorrowRequestResult {
+  id: number;
+  requestCode: string;
+  status: 'pending';
+}
+
+export interface PublicRequestStatus {
+  requestCode: string;
+  requesterName: string;
+  requesterClass: string;
+  borrowingType: 'PERSONAL' | 'CLASS_REPRESENTATIVE';
+  bookTitle: string;
+  quantity: number;
+  status: 'pending' | 'approved' | 'rejected' | 'borrowed' | 'returned' | 'overdue' | 'cancelled';
+  requestedAt: string;
+  approvedAt?: string | null;
+  dueDate?: string | null;
+  rejectionReason?: string | null;
 }
 
 export interface StaffMember {

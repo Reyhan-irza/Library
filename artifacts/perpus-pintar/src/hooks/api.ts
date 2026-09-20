@@ -8,6 +8,7 @@ import type {
   Rack, RackInput,
   Member, MemberInput,
   Borrowing, BorrowingInput,
+  PublicCatalogBook, PublicBorrowRequestInput, PublicBorrowRequestResult, PublicRequestStatus,
   StaffMember, StaffInput, StaffUpdate,
   DashboardStats, ChartData, TopBook, Activity, Notification, ReportSummary,
 } from '@/types';
@@ -32,6 +33,8 @@ export const getNotificationsQueryKey = () => ['notifications'];
 export const getMeQueryKey = () => ['me'];
 export const getReportSummaryQueryKey = () => ['report', 'summary'];
 export const getLandingStatsQueryKey = () => ['landing', 'stats'];
+export const getPublicCatalogQueryKey = (search: string, categoryId: number | null, availableOnly: boolean) =>
+  ['public-catalog', search, categoryId, availableOnly];
 
 function invalidateLandingStats(qc: ReturnType<typeof useQueryClient>) {
   return qc.invalidateQueries({ queryKey: getLandingStatsQueryKey() });
@@ -44,6 +47,7 @@ function mapBook(row: any): Book {
   const avail = row.available_stock ?? 0;
   return {
     id: row.id,
+    bookCode: row.book_code ?? null,
     isbn: row.isbn,
     title: row.title,
     author: row.author,
@@ -64,25 +68,125 @@ function mapBook(row: any): Book {
 
 function mapBorrowing(row: any): Borrowing {
   const today = new Date();
-  const due = parseISO(row.due_date);
-  let status: 'borrowed' | 'returned' | 'overdue' = row.status;
-  if (status === 'borrowed' && differenceInDays(today, due) > 0) status = 'overdue';
+  const due = row.due_date ? parseISO(row.due_date) : null;
+  let status: Borrowing['status'] = row.status;
+  if (status === 'borrowed' && due && differenceInDays(today, due) > 0) status = 'overdue';
   return {
     id: row.id,
     memberId: row.member_id,
     bookId: row.book_id,
-    memberName: row.members?.name ?? '-',
+    memberName: row.members?.name ?? row.requester_name ?? '-',
     memberNumber: row.members?.member_number ?? '-',
+    requesterName: row.requester_name,
+    requesterClass: row.requester_class,
+    requesterStudentId: row.requester_student_id,
     bookTitle: row.books?.title ?? '-',
     bookIsbn: row.books?.isbn ?? '-',
     borrowDate: row.borrow_date,
     dueDate: row.due_date,
     returnDate: row.return_date,
     status,
+    quantity: row.quantity ?? 1,
+    requestCode: row.request_code,
+    borrowingMethod: row.borrowing_method ?? 'ADMIN_ASSISTED',
+    borrowingType: row.borrowing_type ?? 'PERSONAL',
+    approvedAt: row.approved_at,
+    rejectionReason: row.rejection_reason,
     fine: row.fine ?? 0,
     notes: row.notes,
     createdAt: row.created_at,
   };
+}
+
+function mapPublicCatalogBook(row: any): PublicCatalogBook {
+  return {
+    id: row.id,
+    bookCode: row.book_code,
+    isbn: row.isbn,
+    title: row.title,
+    author: row.author,
+    publisher: row.publisher,
+    publicationYear: row.publication_year,
+    description: row.description,
+    pages: row.pages,
+    coverUrl: row.cover_url,
+    categoryId: row.category_id,
+    categoryName: row.category_name,
+    rackId: row.rack_id,
+    rackName: row.rack_name,
+    totalCopies: row.total_copies ?? 0,
+    availableCopies: row.available_copies ?? 0,
+    availabilityStatus: row.availability_status,
+  };
+}
+
+function mapPublicRequestStatus(row: any): PublicRequestStatus {
+  return {
+    requestCode: row.request_code,
+    requesterName: row.requester_name,
+    requesterClass: row.requester_class,
+    borrowingType: row.borrowing_type,
+    bookTitle: row.book_title,
+    quantity: row.quantity,
+    status: row.status,
+    requestedAt: row.requested_at,
+    approvedAt: row.approved_at,
+    dueDate: row.due_date,
+    rejectionReason: row.rejection_reason,
+  };
+}
+
+// ── Public catalog and self-service borrowing ──────────────────────────────
+
+export function usePublicCatalog(search: string, categoryId: number | null, availableOnly: boolean) {
+  return useQuery<PublicCatalogBook[]>({
+    queryKey: getPublicCatalogQueryKey(search, categoryId, availableOnly),
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('public_catalog_books', {
+        p_search: search.trim() || null,
+        p_category_id: categoryId,
+        p_available_only: availableOnly,
+      });
+      if (error) throw error;
+      return (data ?? []).map(mapPublicCatalogBook);
+    },
+  });
+}
+
+export function useSubmitPublicBorrowRequest() {
+  return useMutation({
+    mutationFn: async (input: PublicBorrowRequestInput): Promise<PublicBorrowRequestResult> => {
+      const { data, error } = await supabase.rpc('submit_public_borrow_request', {
+        p_book_id: input.bookId,
+        p_quantity: input.quantity,
+        p_borrowing_type: input.borrowingType,
+        p_requester_name: input.requesterName,
+        p_requester_class: input.requesterClass,
+        p_requester_student_id: input.requesterStudentId,
+        p_requester_contact: input.requesterContact || null,
+        p_notes: input.notes || null,
+      });
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row?.request_code) throw new Error('Request berhasil dibuat tetapi kode tidak diterima');
+      return { id: row.id, requestCode: row.request_code, status: row.status };
+    },
+  });
+}
+
+export function useLookupPublicRequestStatus() {
+  return useMutation({
+    mutationFn: async ({ requestCode, studentId }: { requestCode: string; studentId: string }) => {
+      const { data, error } = await supabase.rpc('public_request_status', {
+        p_request_code: requestCode.trim(),
+        p_requester_student_id: studentId.trim(),
+      });
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row) throw new Error('Request tidak ditemukan. Periksa kode dan NIS/NISN Anda.');
+      return mapPublicRequestStatus(row);
+    },
+  });
 }
 
 // ── Books ─────────────────────────────────────────────────────────────────
@@ -143,12 +247,25 @@ export function useUpdateBook() {
       if (input.author !== undefined) update.author = input.author;
       if (input.publisher !== undefined) update.publisher = input.publisher;
       if (input.year !== undefined) update.year = input.year;
-      if (input.stock !== undefined) update.stock = input.stock;
       if (input.description !== undefined) update.description = input.description;
       if (input.pages !== undefined) update.pages = input.pages;
       if (input.coverUrl !== undefined) update.cover_url = input.coverUrl;
       if (input.categoryId !== undefined) update.category_id = input.categoryId;
       if (input.rackId !== undefined) update.rack_id = input.rackId;
+
+      if (input.stock !== undefined) {
+        const { error } = await supabase.rpc('admin_update_book_inventory', {
+          p_book_id: id,
+          p_stock: input.stock,
+        });
+        if (error) throw error;
+      }
+
+      if (Object.keys(update).length === 0) {
+        const { data, error } = await supabase.from('books').select().eq('id', id).single();
+        if (error) throw error;
+        return data;
+      }
 
       const { data, error } = await supabase.from('books').update(update).eq('id', id).select().single();
       if (error) throw error;
@@ -381,15 +498,16 @@ export function useCreateBorrowing() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: BorrowingInput) => {
-      const { data, error } = await supabase.rpc('borrow_book', {
+      const { data, error } = await supabase.rpc('admin_create_borrowing', {
         p_member_id: input.memberId,
         p_book_id: input.bookId,
+        p_quantity: input.quantity ?? 1,
+        p_borrowing_type: input.borrowingType ?? 'PERSONAL',
         p_due_date: input.dueDate,
         p_notes: input.notes ?? null,
-        p_created_by: getUser()?.id ?? null,
       });
       if (error) throw error;
-      return data;
+      return Array.isArray(data) ? data[0] : data;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: getBorrowingsQueryKey() });
@@ -400,12 +518,13 @@ export function useCreateBorrowing() {
   });
 }
 
-export function useReturnBook() {
+export function useApproveBorrowRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (borrowingId: number) => {
-      const { data, error } = await supabase.rpc('return_book', {
+    mutationFn: async ({ borrowingId, dueDate }: { borrowingId: number; dueDate: string }) => {
+      const { data, error } = await supabase.rpc('admin_approve_borrow_request', {
         p_borrowing_id: borrowingId,
+        p_due_date: dueDate,
       });
       if (error) throw error;
       return data;
@@ -414,7 +533,66 @@ export function useReturnBook() {
       qc.invalidateQueries({ queryKey: getBorrowingsQueryKey() });
       qc.invalidateQueries({ queryKey: getBooksQueryKey() });
       qc.invalidateQueries({ queryKey: getDashboardStatsQueryKey() });
+      qc.invalidateQueries({ queryKey: getRecentActivitiesQueryKey() });
       invalidateLandingStats(qc);
+    },
+  });
+}
+
+export function useRejectBorrowRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ borrowingId, reason }: { borrowingId: number; reason: string }) => {
+      const { data, error } = await supabase.rpc('admin_reject_borrow_request', {
+        p_borrowing_id: borrowingId,
+        p_rejection_reason: reason,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: getBorrowingsQueryKey() });
+      qc.invalidateQueries({ queryKey: getRecentActivitiesQueryKey() });
+    },
+  });
+}
+
+export function useReturnBook() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: number | { borrowingId: number; condition?: string; notes?: string }) => {
+      const borrowingId = typeof input === 'number' ? input : input.borrowingId;
+      const { data, error } = await supabase.rpc('admin_return_borrowing', {
+        p_borrowing_id: borrowingId,
+        p_return_condition: typeof input === 'number' ? 'GOOD' : input.condition ?? 'GOOD',
+        p_return_notes: typeof input === 'number' ? null : input.notes ?? null,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: getBorrowingsQueryKey() });
+      qc.invalidateQueries({ queryKey: getBooksQueryKey() });
+      qc.invalidateQueries({ queryKey: getDashboardStatsQueryKey() });
+      qc.invalidateQueries({ queryKey: getRecentActivitiesQueryKey() });
+      invalidateLandingStats(qc);
+    },
+  });
+}
+
+export function useMarkOverdueBorrowings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('admin_mark_overdue_borrowings');
+      if (error) throw error;
+      return data as number;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: getBorrowingsQueryKey() });
+      qc.invalidateQueries({ queryKey: getDashboardStatsQueryKey() });
+      qc.invalidateQueries({ queryKey: getReportSummaryQueryKey() });
+      qc.invalidateQueries({ queryKey: getRecentActivitiesQueryKey() });
     },
   });
 }
@@ -564,12 +742,15 @@ export function useGetDashboardStats() {
     queryFn: async () => {
       const [{ count: totalBooks }, { data: borrows }, { count: totalMembers }] = await Promise.all([
         supabase.from('books').select('*', { count: 'exact', head: true }),
-        supabase.from('borrowings').select('status, fine'),
+        supabase.from('borrowings').select('status, fine, due_date'),
         supabase.from('members').select('*', { count: 'exact', head: true }),
       ]);
       const { data: avail } = await supabase.from('books').select('available_stock').gt('available_stock', 0);
-      const borrowed = (borrows ?? []).filter((b: any) => b.status === 'borrowed').length;
-      const overdue = (borrows ?? []).filter((b: any) => b.status === 'overdue').length;
+      const isOverdue = (borrowing: any) =>
+        borrowing.status === 'overdue'
+        || (borrowing.status === 'borrowed' && borrowing.due_date && borrowing.due_date < format(new Date(), 'yyyy-MM-dd'));
+      const borrowed = (borrows ?? []).filter((b: any) => b.status === 'borrowed' && !isOverdue(b)).length;
+      const overdue = (borrows ?? []).filter(isOverdue).length;
       const totalFine = (borrows ?? []).reduce((s: number, b: any) => s + (b.fine ?? 0), 0);
       return {
         totalBooks: totalBooks ?? 0,
@@ -817,7 +998,7 @@ export function useGetReportSummary(params?: { start?: string; end?: string }) {
   return useQuery({
     queryKey: getReportSummaryQueryKey(),
     queryFn: async () => {
-      let q = supabase.from('borrowings').select('status, fine, return_date');
+      let q = supabase.from('borrowings').select('status, fine, return_date, due_date');
       if (params?.start) q = q.gte('borrow_date', params.start);
       if (params?.end) q = q.lte('borrow_date', params.end);
       const { data, error } = await q;
@@ -828,7 +1009,10 @@ export function useGetReportSummary(params?: { start?: string; end?: string }) {
       return {
         totalBorrowings: rows.length,
         totalReturned: rows.filter((b: any) => b.return_date).length,
-        totalOverdue: rows.filter((b: any) => !b.return_date && b.status === 'overdue').length,
+        totalOverdue: rows.filter((b: any) => !b.return_date && (
+          b.status === 'overdue'
+          || (b.status === 'borrowed' && b.due_date && b.due_date < format(new Date(), 'yyyy-MM-dd'))
+        )).length,
         totalFine: rows.reduce((s: number, b: any) => s + (b.fine ?? 0), 0),
         totalMembers: totalMembers ?? 0,
         totalBooks: totalBooks ?? 0,

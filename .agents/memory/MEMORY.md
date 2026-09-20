@@ -2,3 +2,4 @@
 - [Vireon brand direction](vireon-brand-direction.md) — identitas harus netral dari sekolah, motion scroll-linked dan reduced-motion aware, copy terasa natural, kredit developer tetap terlihat.
 - [GitHub credential precedence](github-credential-precedence.md) — stale GITHUB_TOKEN can override connected GitHub auth; validate the active path before CLI pushes.
 - [Truthful public totals](public-library-totals.md) — anonymous RLS counts can look like an empty library; publish aggregates without exposing private rows.
+- [Vercel OpenGraph cache](vercel-opengraph-cache.md) — version the absolute image URL when social previews keep serving an older cached asset.

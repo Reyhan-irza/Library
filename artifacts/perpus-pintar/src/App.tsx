@@ -21,6 +21,8 @@ import StaffPage from "@/pages/staff";
 import FavoritesPage from "@/pages/favorites";
 import ProfilePage from "@/pages/profile";
 import ReportsPage from "@/pages/reports";
+import CatalogPage from "@/pages/catalog";
+import RequestStatusPage from "@/pages/request-status";
 import NotFoundPage from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -75,6 +77,14 @@ function AppRoutes() {
       {/* Login — bypass if already authenticated */}
       <Route path="/login">
         {() => <PublicRoute component={LoginPage} />}
+      </Route>
+
+      {/* Public catalog and request status — intentionally outside PrivateRoute */}
+      <Route path="/catalog">
+        {() => <CatalogPage />}
+      </Route>
+      <Route path="/request-status">
+        {() => <RequestStatusPage />}
       </Route>
 
       {/* Protected routes */}

@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "HLd88VCGWCJBexx3Qcjuh"
+uri = "file://artifacts/perpus-pintar/public/og-image.png"
+type = "image"
+title = "VIREON OpenGraph artwork"
+description = "Artwork OpenGraph 1200×630 dengan wordmark baru, foto ruang baca, panel emerald, dan copy VIREON Library."
+logical_id = "5184141f-c237-4f89-8853-7ad78a17544e"
+content_hash = "sha256:8574e48f8c5c3240f0eee32c2894dd3fda73795d8c802dfb3afc1866f5fe02a9"
+size = 600956
+mtime_ms = 1789831939832
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:f4012410-f37b-4987-9533-5de966859d92/5184141f-c237-4f89-8853-7ad78a17544e/6b675d53-3359-49de-9a05-38a526cf694b"
+storage_version_token = "1789832031755894"
+content_type = "image/png"

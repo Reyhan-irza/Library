@@ -1,0 +1,1083 @@
+You are working on the VIREON Library System.
+
+## PHASE 3 — ADMIN OPERATIONS, INVENTORY CONTROL, RETURNS & LIBRARY MANAGEMENT
+
+Your task is to implement and polish the operational library-management layer of VIREON.
+
+This phase focuses ONLY on authenticated admin operations and library inventory workflows.
+
+Do not redesign unrelated public landing pages.
+Do not rebuild the authentication system.
+Do not replace the existing architecture.
+Do not introduce fake/mock data where real Supabase data already exists.
+
+The system must remain production-oriented, consistent, secure, responsive, and maintainable.
+
+==================================================
+1. EXECUTION PROTOCOL
+==================================================
+
+Before modifying ANY file:
+
+1. Inspect the repository.
+2. Inspect the current database schema.
+3. Inspect existing Supabase queries/services/hooks.
+4. Inspect current Admin Dashboard.
+5. Inspect existing:
+   - Books/Barang/Buku modules
+   - Members/Pembeli/Anggota modules
+   - Borrowing/Transactions modules
+   - Categories
+   - Returns
+   - Search/filter components
+   - Tables
+   - Forms
+   - Dialogs/modals
+   - Toast/notification system
+   - Authentication and role guards
+   - RLS policies
+6. Identify which functionality already exists.
+7. Reuse existing components and business logic wherever possible.
+8. Identify the minimum files required for this phase.
+
+DO NOT modify anything during the initial inspection.
+
+After inspection, create a concise implementation plan containing:
+
+- Files/components to modify
+- Database changes required
+- Existing functionality being reused
+- New functionality required
+- Security/RLS considerations
+- Potential regression risks
+
+Only after the plan is established should implementation begin.
+
+==================================================
+2. ARCHITECTURE PRESERVATION
+==================================================
+
+Preserve the current stack and architecture:
+
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- Supabase
+- React Query
+- Existing routing
+- Existing authentication
+- Existing reusable components
+- Existing design tokens
+- Existing database structure where possible
+
+Do NOT:
+
+- Rewrite the application
+- Replace Supabase
+- Replace React Query without a strong technical reason
+- Create duplicate services
+- Create duplicate hooks
+- Create duplicate database tables
+- Rename existing tables unnecessarily
+- Rename existing columns unnecessarily
+- Break existing routes
+- Remove working features
+- Add unnecessary dependencies
+
+Prefer incremental implementation.
+
+==================================================
+3. ADMIN INFORMATION ARCHITECTURE
+==================================================
+
+Ensure the authenticated admin workspace has a clear operational structure.
+
+Recommended sections:
+
+Dashboard
+├── Overview
+├── Books
+├── Members
+├── Borrowings
+├── Returns
+├── Categories
+├── Reports
+└── Activity / Audit
+
+Use the application's existing navigation structure if it already exists.
+
+Do not blindly create new navigation items if equivalent functionality already exists.
+
+Navigation should clearly communicate:
+
+- What needs attention
+- Current inventory
+- Active borrowings
+- Pending requests
+- Overdue items
+- Recent activity
+
+==================================================
+4. BOOK MANAGEMENT
+==================================================
+
+Implement or improve complete CRUD for books.
+
+Book fields should follow the existing database schema.
+
+Potential fields include:
+
+- title
+- author
+- publisher
+- ISBN
+- category
+- description
+- publication year
+- cover/image
+- total stock
+- available stock
+- book code
+- created_at
+- updated_at
+
+IMPORTANT:
+
+Do not invent fields if the existing schema uses different names.
+
+Inspect the database first.
+
+Book management must support:
+
+- Create
+- Read
+- Update
+- Delete
+- Search
+- Filter
+- Sort
+- Pagination if needed
+
+Validation:
+
+- Title required
+- Author required if required by current schema
+- Category must reference a valid category
+- Stock cannot be negative
+- ISBN should be validated when provided
+- Numeric fields must reject invalid values
+
+Prevent accidental deletion when a book is still referenced by active borrowing records.
+
+If hard deletion is unsafe, use the application's existing soft-delete/archive pattern.
+
+Do not silently delete historical transaction data.
+
+==================================================
+5. INVENTORY MANAGEMENT
+==================================================
+
+Inventory integrity is critical.
+
+The system must maintain:
+
+total_stock
+available_stock
+borrowed_stock
+
+Where appropriate, borrowed_stock may be derived instead of stored.
+
+Do not maintain duplicated values unless necessary.
+
+Core invariant:
+
+available_stock must never be negative.
+
+When a borrowing is approved:
+
+available stock must be revalidated server-side/database-side.
+
+When a book is returned:
+
+available stock must be restored exactly once.
+
+Prevent:
+
+- Double approval
+- Double return
+- Over-allocation
+- Negative inventory
+- Duplicate transaction effects
+- Race conditions
+
+Do not rely solely on frontend checks.
+
+Critical inventory operations must be protected at the database/backend layer.
+
+==================================================
+6. BORROWING MANAGEMENT
+==================================================
+
+Create a clear admin borrowing workspace.
+
+Admins should be able to:
+
+- View borrowing requests
+- Search by request code
+- Search by student/member
+- Search by book
+- Filter by status
+- Filter by date
+- Filter by borrowing method
+- Open transaction details
+- Approve eligible requests
+- Reject requests
+- View active borrowings
+- View overdue borrowings
+- View returned transactions
+
+Statuses should follow the existing Phase 2 state machine.
+
+Expected lifecycle:
+
+PENDING
+↓
+APPROVED
+↓
+BORROWED
+↓
+RETURNED
+
+Alternative:
+
+PENDING → REJECTED
+
+Possible operational states:
+
+BORROWED → OVERDUE
+
+APPROVED → CANCELLED
+
+Do not introduce unnecessary statuses.
+
+Every state transition must be validated.
+
+==================================================
+7. ADMIN-ASSISTED BORROWING
+==================================================
+
+Admins must be able to create a borrowing transaction directly for students who cannot or do not use the public self-service flow.
+
+Flow:
+
+Student
+↓
+Admin
+↓
+Select/search student
+↓
+Select book
+↓
+Set borrowing details
+↓
+Validate availability
+↓
+Confirm
+↓
+BORROWED
+
+There should NOT be a second approval step if the admin is already creating and confirming the transaction.
+
+Record:
+
+borrowing_method = ADMIN_ASSISTED
+
+For public self-service:
+
+borrowing_method = SELF_SERVICE
+
+Reuse existing request/transaction structures whenever possible.
+
+==================================================
+8. MEMBER MANAGEMENT
+==================================================
+
+Implement or improve member/student management.
+
+Admins should be able to:
+
+- View members
+- Search members
+- Filter by class
+- Search by student ID/NIS if available
+- View borrowing history
+- View currently borrowed books
+- View overdue books
+
+Potential fields:
+
+- full name
+- student ID/NIS
+- class
+- contact information if already supported
+- created_at
+- updated_at
+
+Do not collect unnecessary personal information.
+
+Avoid exposing member information to public users.
+
+Member deletion must not destroy historical transaction records.
+
+If deletion would compromise historical records, use archive/deactivation instead.
+
+==================================================
+9. RETURN MANAGEMENT
+==================================================
+
+Implement a dedicated return workflow.
+
+Admin should be able to:
+
+1. Find active borrowing.
+2. Review transaction details.
+3. Confirm returned book.
+4. Record return date.
+5. Record book condition.
+6. Add optional notes.
+7. Update inventory.
+8. Mark transaction as RETURNED.
+
+Condition options should be configurable if possible.
+
+Example:
+
+- GOOD
+- MINOR_DAMAGE
+- MAJOR_DAMAGE
+- LOST
+
+Do not assume school policies that have not been defined.
+
+If the existing application already has condition values, preserve them.
+
+A transaction must not be returned twice.
+
+The return operation must be idempotent or protected against duplicate submission.
+
+==================================================
+10. OVERDUE HANDLING
+==================================================
+
+Identify overdue transactions based on:
+
+due_date < current date
+AND
+status is still active/borrowed
+
+Do not hardcode arbitrary borrowing durations.
+
+Use the existing due-date logic.
+
+If due-date configuration does not exist:
+
+- do not invent a school policy
+- make the value configurable where appropriate
+- or preserve the existing workflow
+
+Admin dashboard should clearly distinguish:
+
+- Active
+- Due soon
+- Overdue
+- Returned
+
+Use subtle visual status indicators.
+
+Do not rely only on color.
+
+==================================================
+11. REQUEST CODE & TRANSACTION IDENTIFICATION
+==================================================
+
+Preserve the human-readable request/transaction code introduced in Phase 2.
+
+Example format:
+
+VRN-2026-004821
+
+Do not expose sequential database IDs to public users when a safer public identifier exists.
+
+Admin search should support:
+
+- Request code
+- Student name
+- Student ID
+- Book title
+- Book code
+- Status
+- Date
+
+==================================================
+12. BOOK DETAIL PAGE
+==================================================
+
+Create a useful admin book detail view.
+
+Show:
+
+- Cover
+- Title
+- Author
+- Category
+- ISBN
+- Publisher
+- Publication year
+- Total stock
+- Available stock
+- Active borrowings
+- Borrowing history
+- Recent activity
+
+Only show fields that actually exist.
+
+Avoid fake statistics.
+
+Inventory numbers must come from real database data.
+
+==================================================
+13. SEARCH & FILTER SYSTEM
+==================================================
+
+Implement consistent search/filter UX.
+
+Search should support relevant fields without causing excessive database requests.
+
+Recommended:
+
+- Debounced search
+- Server-side filtering where appropriate
+- Pagination for large datasets
+- URL/query-state persistence where appropriate
+
+Filters:
+
+Books:
+- Category
+- Availability
+- Author
+
+Borrowings:
+- Status
+- Date
+- Borrowing method
+- Member
+- Book
+
+Members:
+- Class
+- Status
+
+Do not implement every possible filter if the dataset does not justify it.
+
+Keep the interface simple.
+
+==================================================
+14. TABLE UX
+==================================================
+
+Admin tables must feel like a professional SaaS application.
+
+Include:
+
+- Clear column hierarchy
+- Compact but readable spacing
+- Sticky headers when appropriate
+- Row hover
+- Status badges
+- Empty states
+- Loading skeletons
+- Pagination
+- Action menus
+- Confirmation dialogs for destructive operations
+
+Avoid:
+
+- Excessive borders
+- Huge row heights
+- Rainbow badges
+- Excessive shadows
+- Decorative elements that reduce information density
+
+Use Lucide React icons where icons are needed.
+
+Do not use emojis as UI icons.
+
+==================================================
+15. FORMS
+==================================================
+
+Forms must have:
+
+- Clear labels
+- Required indicators
+- Inline validation
+- Helpful error messages
+- Loading states
+- Disabled submit during mutation
+- Success feedback
+- Server error handling
+- Keyboard accessibility
+
+Do not rely on browser alerts.
+
+Use the existing toast/dialog system if available.
+
+Prevent duplicate form submissions.
+
+For destructive actions:
+
+Use confirmation dialogs.
+
+Examples:
+
+Delete book
+Reject request
+Cancel transaction
+Archive member
+
+Confirmation dialogs should clearly explain the consequence.
+
+==================================================
+16. AUDIT TRAIL
+==================================================
+
+Every important administrative action should be traceable.
+
+Audit events may include:
+
+- Book created
+- Book updated
+- Book archived
+- Borrowing created
+- Borrowing approved
+- Borrowing rejected
+- Book returned
+- Member created
+- Member updated
+- Category changed
+
+Record when possible:
+
+- actor/admin ID
+- action
+- entity type
+- entity ID
+- timestamp
+- relevant metadata
+
+Reuse an existing audit system if one already exists.
+
+Do not expose sensitive audit information publicly.
+
+==================================================
+17. DASHBOARD OVERVIEW
+==================================================
+
+Improve the admin dashboard so it reflects actual operational data.
+
+Useful metrics:
+
+- Total books
+- Available books
+- Active borrowings
+- Pending requests
+- Overdue borrowings
+- Registered members
+
+All values must come from Supabase.
+
+Never hardcode production statistics.
+
+Handle:
+
+Loading
+Empty
+Error
+Success
+
+states properly.
+
+Do not make unnecessary queries if the same data can be reused through React Query.
+
+==================================================
+18. RECENT ACTIVITY
+==================================================
+
+Add or improve a recent activity section if the existing architecture supports it.
+
+Examples:
+
+"Book returned"
+"New borrowing request"
+"Borrowing approved"
+"Book inventory updated"
+
+Activity should use actual database events.
+
+Avoid fake timestamps or fake names.
+
+==================================================
+19. SECURITY & RLS
+==================================================
+
+Security is mandatory.
+
+Public users:
+
+- Can access public catalog data allowed by policy.
+- Can submit borrowing requests according to Phase 2 rules.
+- Can check their own request using the request code.
+- Must not access other users' private data.
+- Must not access admin data.
+- Must not modify inventory directly.
+
+Authenticated admins:
+
+- Can perform authorized administrative operations.
+- Must be restricted according to role.
+
+Never trust frontend role checks alone.
+
+Verify Supabase RLS policies.
+
+Do not expose:
+
+- service_role keys
+- private secrets
+- admin credentials
+- sensitive member information
+
+Do not place secrets in client-side code.
+
+==================================================
+20. DATABASE MIGRATION RULES
+==================================================
+
+Before creating migrations:
+
+Inspect the current schema.
+
+Reuse existing tables.
+
+Only add fields/tables that are genuinely required.
+
+Potential additions may include:
+
+- borrowing_method
+- request_code
+- approved_by
+- approved_at
+- returned_by
+- returned_at
+- return_condition
+- return_notes
+- audit metadata
+
+These are examples only.
+
+DO NOT blindly create them if equivalent columns already exist.
+
+Every migration must be:
+
+- additive where possible
+- backward compatible
+- documented
+- safe for existing records
+
+Add indexes for frequently queried fields when justified.
+
+Potential indexed fields:
+
+- request_code
+- status
+- due_date
+- student/member ID
+- book ID
+- created_at
+
+==================================================
+21. CONCURRENCY & DATA INTEGRITY
+==================================================
+
+This is a critical requirement.
+
+Consider this scenario:
+
+Book has 1 available copy.
+
+Student A requests it.
+Student B requests it almost simultaneously.
+
+The system must NOT allow both transactions to consume the same final copy.
+
+Availability must be validated atomically where necessary.
+
+The frontend check is not sufficient.
+
+Use appropriate Supabase/PostgreSQL mechanisms such as:
+
+- transactional database functions
+- conditional updates
+- row-level locking where appropriate
+- atomic inventory updates
+
+Choose the approach compatible with the existing schema.
+
+Do not introduce an unnecessarily complex architecture.
+
+==================================================
+22. ERROR HANDLING
+==================================================
+
+Every database operation must handle:
+
+- Network errors
+- Permission errors
+- Validation errors
+- Constraint violations
+- Empty results
+- Stale data
+- Concurrent changes
+
+Show human-readable messages.
+
+Do not expose raw SQL errors to users.
+
+Log useful technical information only where appropriate.
+
+==================================================
+23. REACT QUERY
+==================================================
+
+Use the existing React Query architecture.
+
+After mutations:
+
+- invalidate relevant queries
+- update cached data when appropriate
+- prevent stale inventory
+- prevent unnecessary refetching
+
+Do not create multiple independent query implementations for the same resource.
+
+Use consistent query keys.
+
+==================================================
+24. RESPONSIVE DESIGN
+==================================================
+
+Admin operations must work across:
+
+320px
+375px
+390px
+414px
+768px
+1024px
+1440px
+1920px
+
+Desktop:
+
+- Data-dense tables
+- Sidebar
+- Multi-column layouts
+
+Mobile:
+
+- Horizontal table scrolling where necessary
+- Stacked forms
+- Bottom/action menus where appropriate
+- Large enough touch targets
+- No clipped dialogs
+- No overflowing content
+
+Minimum touch target:
+
+44px
+
+==================================================
+25. ACCESSIBILITY
+==================================================
+
+Ensure:
+
+- Keyboard navigation
+- Visible focus states
+- Proper labels
+- Semantic buttons
+- Accessible dialogs
+- Accessible form errors
+- Sufficient contrast
+- Status information not communicated by color alone
+
+Do not sacrifice accessibility for visual effects.
+
+==================================================
+26. VISUAL DIRECTION
+==================================================
+
+The admin interface should feel like a professional SaaS product.
+
+References:
+
+- Linear
+- Vercel
+- Stripe
+- Notion
+- Supabase
+- Raycast
+- Clerk
+
+Direction:
+
+- Clean
+- Premium
+- Calm
+- Precise
+- Information-dense
+- Sophisticated
+- Modern
+
+Use the existing VIREON design system.
+
+Typography:
+
+Inter / existing project font
+
+Avoid:
+
+- Bootstrap-like layouts
+- Generic dashboard templates
+- Excessive gradients
+- Neon colors
+- Excessive glassmorphism
+- Giant decorative icons
+- Emoji UI
+- Excessive rounded cards
+- Random animations
+
+Visual hierarchy should prioritize information and usability.
+
+==================================================
+27. ANIMATION
+==================================================
+
+Use animation only where it improves UX.
+
+Good uses:
+
+- Page transitions
+- Table row appearance
+- Modal/dialog transitions
+- Toasts
+- Loading states
+- Subtle hover interactions
+
+Avoid animating every element.
+
+Do not interfere with:
+
+- Data tables
+- Forms
+- Keyboard navigation
+- Screen readers
+
+Respect:
+
+prefers-reduced-motion
+
+Reuse the existing animation system.
+
+Do not introduce GSAP unless there is a clear reason.
+
+==================================================
+28. PERFORMANCE
+==================================================
+
+Avoid:
+
+- Fetching entire tables unnecessarily
+- Re-rendering large tables
+- Duplicate Supabase requests
+- Heavy dependencies
+- Unnecessary effects
+- Client-side filtering of huge datasets
+
+Use:
+
+- Pagination
+- Debounced search
+- React Query caching
+- Selective queries
+- Proper indexes
+
+Optimize only where necessary.
+
+Do not prematurely over-engineer.
+
+==================================================
+29. TEST SCENARIOS
+==================================================
+
+Before declaring Phase 3 complete, verify:
+
+BOOKS
+
+[ ] Create book
+[ ] Edit book
+[ ] Search book
+[ ] Filter book
+[ ] Invalid stock rejected
+[ ] Delete/archive behavior verified
+[ ] Historical transactions remain safe
+
+MEMBERS
+
+[ ] Search member
+[ ] View member
+[ ] View borrowing history
+[ ] View active borrowings
+[ ] Archive/delete behavior verified
+
+BORROWING
+
+[ ] View pending request
+[ ] Approve request
+[ ] Reject request
+[ ] Create admin-assisted borrowing
+[ ] Search by request code
+[ ] Search by student
+[ ] Search by book
+[ ] Filter status
+[ ] Prevent duplicate approval
+
+RETURN
+
+[ ] Find active borrowing
+[ ] Return book
+[ ] Record condition
+[ ] Record notes
+[ ] Restore inventory
+[ ] Prevent duplicate return
+
+INVENTORY
+
+[ ] Stock never becomes negative
+[ ] Concurrent final-copy request handled safely
+[ ] Returned copy becomes available
+[ ] Failed transaction does not corrupt stock
+
+SECURITY
+
+[ ] Public cannot access admin data
+[ ] Public cannot modify inventory
+[ ] Admin permissions verified
+[ ] RLS verified
+[ ] No secrets exposed
+
+UX
+
+[ ] Loading states
+[ ] Empty states
+[ ] Error states
+[ ] Success states
+[ ] Mobile layout
+[ ] Keyboard navigation
+[ ] Confirmation dialogs
+
+==================================================
+30. BUILD & VERIFICATION
+==================================================
+
+Before completion:
+
+Run:
+
+- TypeScript/typecheck
+- Production build
+- Existing tests if available
+- Lint if configured
+
+Verify:
+
+- No TypeScript errors
+- No broken imports
+- No broken routes
+- No console errors
+- No failed Supabase queries
+- No broken authentication
+- No duplicate database operations
+- No obvious UI regressions
+
+Review the final diff.
+
+Remove:
+
+- unused imports
+- dead code
+- debug logs
+- temporary mock data
+- unused dependencies
+- accidental test code
+
+==================================================
+31. FINAL EXECUTION GUARD
+==================================================
+
+Before modifying ANY file:
+
+1. Inspect repository.
+2. Inspect schema.
+3. Inspect existing admin functionality.
+4. Identify reusable components and logic.
+5. Identify minimal files.
+6. Produce implementation plan.
+
+Then implement.
+
+Do NOT expand the scope beyond Phase 3.
+
+Do NOT redesign unrelated public pages.
+
+Do NOT rewrite working architecture.
+
+Do NOT invent school policies.
+
+Do NOT create fake data.
+
+Do NOT mark functionality as complete unless it has actually been implemented and verified.
+
+If an existing implementation conflicts with this specification:
+
+- Prefer preserving working production behavior.
+- Explain the conflict.
+- Make the smallest safe change.
+- Do not silently rewrite unrelated systems.
+
+At the end, provide a concise implementation report:
+
+1. What was implemented
+2. Files changed
+3. Database changes
+4. Security/RLS changes
+5. Tests performed
+6. Build result
+7. Remaining limitations
+8. Any recommended follow-up work
+
+The goal is not simply to make the interface look finished.
+
+The goal is to make VIREON operationally reliable for real library administration.
