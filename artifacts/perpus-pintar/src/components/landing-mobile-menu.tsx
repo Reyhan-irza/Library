@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { gsap } from "gsap";
 import {
   ArrowUpRight,
+  BookOpen,
+  ClipboardCheck,
   ChevronRight,
   Command,
   CornerDownLeft,
@@ -37,24 +40,53 @@ const FOCUSABLE_SELECTOR =
 
 export function MobileMenuMark({ open }: { open: boolean }) {
   const reduced = useReducedMotion();
-  const transition = reduced ? { duration: 0 } : { duration: 0.52, ease: MENU_EASE };
+  const markRef = useRef<HTMLSpanElement>(null);
+  const topLineRef = useRef<HTMLSpanElement>(null);
+  const bottomLineRef = useRef<HTMLSpanElement>(null);
+  const dotRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const mark = markRef.current;
+    const topLine = topLineRef.current;
+    const bottomLine = bottomLineRef.current;
+    const dot = dotRef.current;
+    if (!mark || !topLine || !bottomLine || !dot) return;
+
+    const context = gsap.context(() => {
+      const timeline = gsap.timeline({
+        defaults: {
+          duration: reduced ? 0 : 0.48,
+          ease: "power3.out",
+        },
+      });
+
+      timeline
+        .to(topLine, { rotate: open ? 45 : 0, y: open ? 0 : -4, width: 28 }, 0)
+        .to(bottomLine, { rotate: open ? -45 : 0, y: open ? 0 : 4, width: open ? 28 : 20 }, 0)
+        .to(dot, { autoAlpha: open ? 0 : 1, scale: open ? 0.3 : 1 }, 0.08)
+        .to(mark, { scale: open ? 1.06 : 1, rotate: open ? 1 : 0 }, 0);
+    }, mark);
+
+    return () => context.revert();
+  }, [open, reduced]);
 
   return (
-    <span className="relative flex h-5 w-7 items-center justify-center" aria-hidden="true">
-      <motion.span
-        className="absolute h-px w-7 origin-center bg-current"
-        animate={open ? { rotate: 45, y: 0 } : { rotate: 0, y: -4 }}
-        transition={transition}
+    <span
+      ref={markRef}
+      className="relative flex h-5 w-7 items-center justify-center transition-[filter] duration-300 group-hover:drop-shadow-[0_0_7px_rgba(84,216,178,0.5)]"
+      aria-hidden="true"
+    >
+      <span
+        ref={topLineRef}
+        className="absolute h-[1.5px] w-7 origin-center rounded-full bg-current will-change-transform"
       />
-      <motion.span
-        className="absolute h-px w-5 origin-center bg-current"
-        animate={open ? { rotate: -45, y: 0, width: 28 } : { rotate: 0, y: 4, width: 20 }}
-        transition={transition}
+      <span
+        ref={bottomLineRef}
+        className="absolute h-[1.5px] w-5 origin-center rounded-full bg-current will-change-transform"
       />
-      <motion.span
+      <span
+        ref={dotRef}
         className="absolute -right-1 top-1/2 h-1 w-1 -translate-y-1/2 rounded-full bg-[#54d8b2]"
-        animate={open ? { opacity: 0, scale: 0 } : { opacity: 1, scale: 1 }}
-        transition={reduced ? { duration: 0 } : { duration: 0.28, ease: MENU_EASE }}
       />
     </span>
   );
@@ -268,6 +300,40 @@ export function LandingMobileMenu({
                 })}
               </ul>
             </nav>
+
+            <div className="mt-7 grid gap-2 sm:mt-8 sm:grid-cols-2">
+              <Link
+                href="/catalog"
+                onClick={onClose}
+                data-testid="link-mobile-menu-catalog"
+                className="flex min-h-[54px] items-center justify-between rounded-2xl border border-[#54d8b2]/30 bg-[#54d8b2]/10 px-4 text-left text-[#d9fff2] transition-colors hover:border-[#54d8b2]/60 hover:bg-[#54d8b2]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#54d8b2]"
+              >
+                <span className="flex items-center gap-3">
+                  <BookOpen className="h-4 w-4 text-[#54d8b2]" aria-hidden="true" />
+                  <span>
+                    <span className="block text-[13px] font-bold">Katalog Buku</span>
+                    <span className="mt-0.5 block text-[10px] text-white/45">Jelajahi koleksi</span>
+                  </span>
+                </span>
+                <ArrowUpRight className="h-4 w-4 text-[#54d8b2]" aria-hidden="true" />
+              </Link>
+
+              <Link
+                href="/request-status"
+                onClick={onClose}
+                data-testid="link-mobile-menu-request-status"
+                className="flex min-h-[54px] items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-left text-white/75 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#54d8b2]"
+              >
+                <span className="flex items-center gap-3">
+                  <ClipboardCheck className="h-4 w-4 text-white/55" aria-hidden="true" />
+                  <span>
+                    <span className="block text-[13px] font-bold">Cek Status</span>
+                    <span className="mt-0.5 block text-[10px] text-white/35">Lihat pengajuan</span>
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 text-white/45" aria-hidden="true" />
+              </Link>
+            </div>
 
             <motion.div
               {...(reduced

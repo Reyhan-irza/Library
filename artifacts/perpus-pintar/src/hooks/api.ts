@@ -26,7 +26,11 @@ export const getStaffQueryKey   = () => ['staff'];
 export const getFavoritesQueryKey = () => ['favorites'];
 export const getFavoriteIdsQueryKey = () => ['favoriteIds'];
 export const getDashboardStatsQueryKey = () => ['dashboard', 'stats'];
-export const getDashboardChartQueryKey = () => ['dashboard', 'chart'];
+export type DashboardChartRange = { start?: string; end?: string; all?: boolean };
+export const getDashboardChartQueryKey = (range?: DashboardChartRange) =>
+  range
+    ? ['dashboard', 'chart', range.start ?? null, range.end ?? null, range.all ? 'all' : 'range']
+    : ['dashboard', 'chart'];
 export const getRecentActivitiesQueryKey = () => ['activities'];
 export const getTopBooksQueryKey = () => ['topBooks'];
 export const getNotificationsQueryKey = () => ['notifications'];
@@ -764,37 +768,67 @@ export function useGetDashboardStats() {
   });
 }
 
-export function useGetDashboardChart() {
+export function useGetDashboardChart(range?: DashboardChartRange) {
   return useQuery({
-    queryKey: getDashboardChartQueryKey(),
+    queryKey: getDashboardChartQueryKey(range),
     queryFn: async () => {
-      // Phase C fix: replaced 6 sequential round-trip queries with a single
-      // query for the whole 6-month window, then aggregate client-side.
       const now = new Date();
-      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-      const rangeStart = format(sixMonthsAgo, 'yyyy-MM-01');
+      const isAll = Boolean(range?.all);
+      let query = supabase.from('borrowings').select('borrow_date, return_date');
 
-      const { data } = await supabase
-        .from('borrowings')
-        .select('borrow_date, return_date')
-        .gte('borrow_date', rangeStart);
+      if (!isAll && range?.start) query = query.gte('borrow_date', range.start);
+      if (!isAll && range?.end) query = query.lte('borrow_date', range.end);
+
+      if (!isAll && !range?.start && !range?.end) {
+        const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        query = query.gte('borrow_date', format(sixMonthsAgo, 'yyyy-MM-01'));
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
 
       const rows = data ?? [];
-      const months: ChartData[] = [];
+      let firstMonth: Date;
+      let lastMonth: Date;
 
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const mStart = new Date(d.getFullYear(), d.getMonth(), 1);
-        const mEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+      if (isAll) {
+        const borrowDates = rows
+          .map((row: any) => new Date(row.borrow_date))
+          .filter((date) => !Number.isNaN(date.getTime()));
+        const earliest = borrowDates.reduce<Date | null>(
+          (current, date) => (!current || date < current ? date : current),
+          null,
+        );
+        firstMonth = earliest
+          ? new Date(earliest.getFullYear(), earliest.getMonth(), 1)
+          : new Date(now.getFullYear(), now.getMonth(), 1);
+        lastMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      } else if (range?.start || range?.end) {
+        const start = range.start ? parseISO(range.start) : parseISO(range.end!);
+        const end = range.end ? parseISO(range.end) : start;
+        firstMonth = new Date(start.getFullYear(), start.getMonth(), 1);
+        lastMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+      } else {
+        firstMonth = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        lastMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+
+      const months: ChartData[] = [];
+      const cursor = new Date(firstMonth);
+
+      while (cursor <= lastMonth) {
+        const mStart = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+        const mEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0, 23, 59, 59);
         const monthRows = rows.filter((b: any) => {
           const date = new Date(b.borrow_date);
           return date >= mStart && date <= mEnd;
         });
         months.push({
-          month: format(d, 'MMM'),
+          month: format(cursor, isAll ? 'MMM yy' : 'MMM'),
           borrowed: monthRows.length,
           returned: monthRows.filter((b: any) => b.return_date).length,
         });
+        cursor.setMonth(cursor.getMonth() + 1);
       }
       return months;
     },

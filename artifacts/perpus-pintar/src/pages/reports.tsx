@@ -38,8 +38,9 @@ export default function ReportsPage() {
     };
   })();
 
+  const chartRange = period === "all" ? { all: true } : params;
   const { data: summary } = useGetReportSummary(params);
-  const { data: chart } = useGetDashboardChart();
+  const { data: chart } = useGetDashboardChart(chartRange);
 
   return (
     <div className="space-y-5">

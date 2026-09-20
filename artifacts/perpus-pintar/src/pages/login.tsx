@@ -6,7 +6,7 @@
  * Auth logic unchanged — Supabase signInWithPassword via useLogin().
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence, useReducedMotion, useScroll, useTransform, type Transition } from "framer-motion";
 import {
@@ -21,6 +21,9 @@ import {
   ShieldCheck,
   AlertCircle,
   Clock,
+  Mail,
+  KeyRound,
+  CheckCircle2,
 } from "lucide-react";
 import VIREON_LOGO, { VIREON_WORDMARK } from "@/assets/logo";
 import { useLogin, useLandingStats } from "@/hooks/api";
@@ -69,6 +72,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [formState, setFormState] = useState<PrivacyBookState>("idle");
+  const [emailCaretProgress, setEmailCaretProgress] = useState(-1);
+  const emailInputRef = useRef<HTMLInputElement>(null);
 
   const login = useLogin();
   const { data: stats, isLoading: statsLoading } = useLandingStats();
@@ -88,6 +93,31 @@ export default function LoginPage() {
 
   function handleFieldChange() {
     if (authError) setAuthError(null);
+  }
+
+  function syncEmailCaret(input: HTMLInputElement) {
+    const styles = window.getComputedStyle(input);
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    context.font = [
+      styles.fontStyle,
+      styles.fontWeight,
+      styles.fontSize,
+      styles.fontFamily,
+    ].join(" ");
+
+    const caretIndex = input.selectionStart ?? input.value.length;
+    const textBeforeCaret = input.value.slice(0, caretIndex);
+    const textWidth = context.measureText(textBeforeCaret).width;
+    const paddingLeft = Number.parseFloat(styles.paddingLeft) || 0;
+    const paddingRight = Number.parseFloat(styles.paddingRight) || 0;
+    const contentWidth = Math.max(1, input.clientWidth - paddingLeft - paddingRight);
+    const visibleCaretX = Math.max(0, Math.min(contentWidth, textWidth - input.scrollLeft));
+    const normalizedProgress = (visibleCaretX / contentWidth) * 2 - 1;
+
+    setEmailCaretProgress(Math.max(-1, Math.min(1, normalizedProgress)));
   }
 
   function handleBlur(e: React.FocusEvent) {
@@ -130,10 +160,24 @@ export default function LoginPage() {
   const isSubmittable = email.trim().length > 0 && password.length > 0 && !login.isPending;
   const activeTypingValue = formState === "email" ? email : password;
   const typingLimit = formState === "email" ? 28 : 16;
-  const typingProgress =
+  const passwordTypingProgress =
     activeTypingValue.length === 0
-      ? -0.45
-      : Math.min(activeTypingValue.length / typingLimit, 1) * 1.45 - 0.45;
+      ? -1
+      : Math.min(activeTypingValue.length / typingLimit, 1) * 2 - 1;
+  const typingProgress = formState === "email" ? emailCaretProgress : passwordTypingProgress;
+  const emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const accessStatus = authError
+    ? "Periksa kembali data masuk"
+    : login.isPending
+      ? "Memverifikasi akses..."
+      : formState === "email"
+        ? "Identitas email sedang diisi"
+        : formState === "password-visible"
+          ? "Tampilan password sedang aktif"
+          : formState === "password-hidden"
+            ? "Password tersimpan dengan aman"
+            : "Siap membuka ruang kerja";
+  const accessStage = formState === "password-hidden" || formState === "password-visible" || login.isPending ? 2 : 1;
 
   return (
     <div
@@ -143,7 +187,13 @@ export default function LoginPage() {
       {/* ══════════════════════════════════════════════════════════════════════
           LEFT — Form Panel
           ══════════════════════════════════════════════════════════════════════ */}
-      <div className="flex-1 lg:w-[480px] lg:max-w-[480px] lg:flex-none flex flex-col bg-[#fdfcf9] relative z-10 border-r border-slate-200/40 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+      <div
+        className="relative z-10 flex flex-1 flex-col overflow-hidden border-r border-slate-200/40 bg-[#f8faf7] shadow-[4px_0_24px_rgba(0,0,0,0.02)] lg:w-[480px] lg:max-w-[480px] lg:flex-none"
+        style={{
+          backgroundImage:
+            "radial-gradient(ellipse 85% 35% at 18% 8%, hsl(161 52% 44% / 0.08) 0%, transparent 72%), radial-gradient(ellipse 70% 45% at 100% 65%, hsl(194 56% 66% / 0.07) 0%, transparent 70%), linear-gradient(145deg, #fafcf9 0%, #f6faf7 100%)",
+        }}
+      >
 
         {/* Rich textural background for form panel */}
         <div
@@ -163,6 +213,25 @@ export default function LoginPage() {
             background:
               "radial-gradient(ellipse 100% 40% at 50% -5%, hsl(161 52% 40% / 0.08) 0%, transparent 65%)",
           }}
+          aria-hidden="true"
+        />
+
+        {/* Soft spatial shapes keep the form panel from feeling flat,
+            especially on mobile where the visual panel is hidden. */}
+        <div
+          className="pointer-events-none absolute -left-28 top-[13%] h-72 w-72 rounded-full bg-emerald-200/20 blur-3xl"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute -right-36 top-[42%] h-80 w-80 rounded-full border border-emerald-900/[0.055]"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute -right-20 top-[48%] h-48 w-48 rounded-full border border-emerald-900/[0.045]"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute bottom-16 left-8 h-24 w-44 rounded-full bg-sky-100/30 blur-3xl"
           aria-hidden="true"
         />
 
@@ -240,13 +309,23 @@ export default function LoginPage() {
                   Buka ruang bacaanmu
                 </div>
 
-                <PrivacyBook
-                  state={formState}
-                  typingProgress={typingProgress}
-                  hasError={Boolean(authError)}
-                  isSubmitting={login.isPending}
-                  className="mr-2 sm:mr-0 shrink-0 -mt-2 lg:mt-0"
-                />
+                <div className="relative mr-2 shrink-0 -mt-2 sm:mr-0 lg:mt-0">
+                  <div
+                    className="pointer-events-none absolute -inset-3 rounded-full bg-emerald-100/55 blur-xl"
+                    aria-hidden="true"
+                  />
+                  <div
+                    className="pointer-events-none absolute right-2 top-1 h-16 w-16 rounded-full border border-emerald-700/[0.10]"
+                    aria-hidden="true"
+                  />
+                  <PrivacyBook
+                    state={formState}
+                    typingProgress={typingProgress}
+                    hasError={Boolean(authError)}
+                    isSubmitting={login.isPending}
+                    className="relative z-10"
+                  />
+                </div>
               </div>
 
               <h1 className="text-[1.875rem] sm:text-[2.125rem] font-extrabold text-slate-900 tracking-[-0.025em] leading-[1.08] mb-3 mt-2 sm:mt-0">
@@ -258,6 +337,53 @@ export default function LoginPage() {
                 Masuk untuk mengatur koleksi, melihat aktivitas, dan menjaga
                 perjalanan membaca tetap rapi.
               </p>
+            </motion.div>
+
+            {/* Small interaction rail makes the form feel like an active access
+                flow instead of a static white card. */}
+            <motion.div
+              layout
+              {...fadeUp(0.07, reduced)}
+              className="relative mb-5 flex items-center gap-3 overflow-hidden rounded-2xl border border-emerald-900/[0.08] bg-emerald-50/45 px-3.5 py-2.5"
+              aria-live="polite"
+            >
+              <motion.div
+                className="absolute inset-x-0 top-0 h-[2px] origin-left bg-gradient-to-r from-emerald-300 via-emerald-500 to-sky-300"
+                animate={{ scaleX: accessStage === 2 ? 1 : 0.5 }}
+                transition={reduced ? { duration: 0 } : { duration: 0.35, ease: EASE }}
+                aria-hidden="true"
+              />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/80 text-emerald-700 shadow-sm ring-1 ring-emerald-900/[0.06]">
+                <ShieldCheck className="h-4 w-4" strokeWidth={1.9} aria-hidden="true" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-800/65">
+                  Akses Vireon
+                </p>
+                <motion.p
+                  key={accessStatus}
+                  initial={reduced ? false : { opacity: 0, y: 3 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`truncate text-[11px] font-semibold ${
+                    authError ? "text-rose-600" : "text-slate-600"
+                  }`}
+                >
+                  {accessStatus}
+                </motion.p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5" aria-hidden="true">
+                {[1, 2].map((step) => (
+                  <motion.span
+                    key={step}
+                    className="h-1.5 rounded-full bg-emerald-500"
+                    animate={{
+                      width: step <= accessStage ? 16 : 6,
+                      opacity: step <= accessStage ? 0.8 : 0.2,
+                    }}
+                    transition={reduced ? { duration: 0 } : { duration: 0.25 }}
+                  />
+                ))}
+              </div>
             </motion.div>
 
             {/* ── Form ────────────────────────────────────────────────────── */}
@@ -276,23 +402,51 @@ export default function LoginPage() {
                 >
                   Email
                 </label>
-                <input
-                  id="login-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    handleFieldChange();
-                  }}
-                  onFocus={() => setFormState("email")}
-                  onBlur={handleBlur}
-                  placeholder="nama@ruangbaca.id"
-                  autoComplete="email"
-                  required
-                  aria-required="true"
-                  aria-invalid={authError ? "true" : undefined}
-                  className="w-full h-11 px-3.5 rounded-xl border border-slate-200/80 bg-[#fdfcf9] lg:bg-slate-50/50 shadow-inner text-[14px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-500/10 transition-all duration-150"
-                />
+                <div className="relative">
+                  <Mail
+                    className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-300 transition-colors duration-150 peer-focus:text-emerald-600/70"
+                    aria-hidden="true"
+                  />
+                  <input
+                    id="login-email"
+                    ref={emailInputRef}
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      handleFieldChange();
+                      syncEmailCaret(e.currentTarget);
+                    }}
+                    onFocus={(e) => {
+                      setFormState("email");
+                      syncEmailCaret(e.currentTarget);
+                    }}
+                    onSelect={(e) => syncEmailCaret(e.currentTarget)}
+                    onKeyUp={(e) => syncEmailCaret(e.currentTarget)}
+                    onBlur={handleBlur}
+                    placeholder="nama@ruangbaca.id"
+                    autoComplete="email"
+                    required
+                    aria-required="true"
+                    aria-invalid={authError ? "true" : undefined}
+                    className="peer h-11 w-full rounded-xl border border-slate-200/80 bg-[#fdfcf9] pl-10 pr-10 text-[14px] text-slate-900 shadow-inner placeholder:text-slate-400 transition-all duration-150 focus:border-emerald-400/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/10 lg:bg-slate-50/50"
+                  />
+                  <AnimatePresence>
+                    {emailLooksValid && (
+                      <motion.span
+                        initial={{ opacity: 0, scale: 0.7 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.7 }}
+                        transition={reduced ? { duration: 0 } : { duration: 0.16 }}
+                        className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-emerald-600"
+                        title="Format email valid"
+                        aria-hidden="true"
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
 
               {/* Password */}
@@ -304,6 +458,10 @@ export default function LoginPage() {
                   Password
                 </label>
                 <div className="relative">
+                  <KeyRound
+                    className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-300 transition-colors duration-150 peer-focus:text-emerald-600/70"
+                    aria-hidden="true"
+                  />
                   <input
                     id="login-password"
                     type={showPassword ? "text" : "password"}
@@ -319,8 +477,23 @@ export default function LoginPage() {
                     required
                     aria-required="true"
                     aria-invalid={authError ? "true" : undefined}
-                    className="w-full h-11 px-3.5 pr-[52px] rounded-xl border border-slate-200/80 bg-[#fdfcf9] lg:bg-slate-50/50 shadow-inner text-[14px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-500/10 transition-all duration-150"
+                    className="peer h-11 w-full rounded-xl border border-slate-200/80 bg-[#fdfcf9] pl-10 pr-[52px] text-[14px] text-slate-900 shadow-inner placeholder:text-slate-400 transition-all duration-150 focus:border-emerald-400/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/10 lg:bg-slate-50/50"
                   />
+                  <AnimatePresence>
+                    {password.length > 0 && (
+                      <motion.span
+                        initial={{ opacity: 0, scale: 0.7 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.7 }}
+                        transition={reduced ? { duration: 0 } : { duration: 0.16 }}
+                        className="pointer-events-none absolute right-11 top-1/2 -translate-y-1/2 text-emerald-600"
+                        title="Password sudah diisi"
+                        aria-hidden="true"
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                   <button
                     type="button"
                     onPointerDown={(e) => e.preventDefault()} // Keeps focus correctly when clicked
@@ -381,32 +554,41 @@ export default function LoginPage() {
                   whileTap={reduced || !isSubmittable ? {} : { scale: 0.982 }}
                   className="w-full h-11 rounded-xl text-white text-[14px] font-semibold flex items-center justify-center gap-2.5 transition-all duration-200 disabled:opacity-55 disabled:cursor-not-allowed relative overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-600"
                   style={{
-                    background: "hsl(161 52% 28%)",
+                    background: "linear-gradient(135deg, hsl(161 52% 34%) 0%, hsl(161 52% 26%) 100%)",
                     boxShadow:
-                      "0 2px 5px rgba(0,0,0,0.18), 0 0 0 1px hsl(161 52% 44% / 0.4)",
+                      "0 3px 7px rgba(15, 23, 42, 0.18), 0 0 0 1px hsl(161 52% 44% / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.16)",
                   }}
                   onMouseEnter={(e) => {
                     if (isSubmittable)
                       (e.currentTarget as HTMLButtonElement).style.background =
-                        "hsl(161 52% 34%)";
+                        "linear-gradient(135deg, hsl(161 52% 39%) 0%, hsl(161 52% 30%) 100%)";
                   }}
                   onMouseLeave={(e) => {
                     (e.currentTarget as HTMLButtonElement).style.background =
-                      "hsl(161 52% 28%)";
+                      "linear-gradient(135deg, hsl(161 52% 34%) 0%, hsl(161 52% 26%) 100%)";
                   }}
                 >
+                  {!reduced && isSubmittable && !login.isPending && (
+                    <motion.span
+                      className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 skew-x-[-18deg] bg-white/15 blur-[1px]"
+                      initial={{ x: "-120%" }}
+                      animate={{ x: "420%" }}
+                      transition={{ duration: 2.4, repeat: Infinity, repeatDelay: 1.8, ease: "easeInOut" }}
+                      aria-hidden="true"
+                    />
+                  )}
                   {login.isPending ? (
                     <>
                       <Loader2
                         className="w-4 h-4 animate-spin"
                         aria-hidden="true"
                       />
-                      <span>Memproses…</span>
+                      <span className="relative z-10">Memproses…</span>
                     </>
                   ) : (
                     <>
-                      <span>Masuk ke Sistem</span>
-                      <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                      <span className="relative z-10">Masuk ke Sistem</span>
+                      <ArrowRight className="relative z-10 w-4 h-4" aria-hidden="true" />
                     </>
                   )}
                 </motion.button>

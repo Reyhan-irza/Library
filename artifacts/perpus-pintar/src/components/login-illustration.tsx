@@ -23,16 +23,17 @@ export function PrivacyBook({
   const reduced = useReducedMotion() ?? true;
   const containerRef = useRef<HTMLDivElement>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isBlinking, setIsBlinking] = useState(false);
   const expression = hasError
     ? "error"
     : isSubmitting
       ? "busy"
       : state === "email"
         ? "curious"
-        : state === "password-hidden"
-          ? "shy"
-          : state === "password-visible"
+          : state === "password-hidden"
             ? "delighted"
+            : state === "password-visible"
+              ? "shy"
             : "calm";
 
   useEffect(() => {
@@ -67,6 +68,33 @@ export function PrivacyBook({
     };
   }, [state, reduced]);
 
+  useEffect(() => {
+    if (reduced) {
+      setIsBlinking(false);
+      return;
+    }
+
+    let blinkTimer: number | undefined;
+    let openTimer: number | undefined;
+
+    const scheduleBlink = () => {
+      blinkTimer = window.setTimeout(() => {
+        setIsBlinking(true);
+        openTimer = window.setTimeout(() => {
+          setIsBlinking(false);
+          scheduleBlink();
+        }, 115);
+      }, 2800 + Math.random() * 2400);
+    };
+
+    scheduleBlink();
+
+    return () => {
+      if (blinkTimer) window.clearTimeout(blinkTimer);
+      if (openTimer) window.clearTimeout(openTimer);
+    };
+  }, [reduced]);
+
   // Eases
   const springConfig: Transition = reduced
     ? { duration: 0 }
@@ -82,39 +110,62 @@ export function PrivacyBook({
 
   // Rotations for 3D pages based on privacy context
   const getLeftRotateY = () => {
-    if (state === "password-hidden") return 87; // Fold inward to shield
-    if (state === "password-visible") return 12; // Open wide
+    if (state === "password-hidden") return 12; // Open wide when the password is hidden
+    if (state === "password-visible") return 87; // Fold inward to shield the visible password
     return 25; // Default reading angle
   };
 
   const getRightRotateY = () => {
-    if (state === "password-hidden") return -87;
-    if (state === "password-visible") return -12;
+    if (state === "password-hidden") return -12;
+    if (state === "password-visible") return -87;
     return -25;
   };
 
   const getRotateX = () => {
     if (state === "email") return 22; // Tilt down to look at email field
-    if (state === "password-hidden") return 0;
+    if (state === "password-visible") return 0;
     return 8;
   };
 
   const getBookTranslateY = () => {
     if (state === "email") return 4;
-    if (state === "password-hidden") return -2; // Lift up defensively
+    if (state === "password-visible") return -2; // Lift up defensively while shielding visible text
     return 0;
   };
 
   // Eyes (bookmarks) mapping
-  const eyeX = mousePos.x * 5;
-  const eyeY = state === "email" ? 14 : state === "password-visible" ? -1 : mousePos.y * 5;
-  const eyeScale = state === "password-visible" ? 1.15 : 1;
-  const caretX = Math.max(-3.5, Math.min(3.5, typingProgress * 3.5));
+  // While typing, the caret is the focus target. Do not blend mouse tracking
+  // into this state or the mascot looks at the visitor instead of the text.
+  const eyeX = state === "email" ? 0 : mousePos.x * 5;
+  const eyeY = state === "password-hidden" ? -1 : mousePos.y * 5;
+  const eyeScale = state === "password-hidden" ? 1.15 : 1;
+  // Map the normalized caret progress (-1 at the start, 1 at the end)
+  // directly to the gaze target.
+  const typingCursorX = Math.max(-5.5, Math.min(5.5, typingProgress * 5.5));
+  const caretX = state === "email" ? typingCursorX : Math.max(-3.5, Math.min(3.5, typingProgress * 3.5));
   const focused = state !== "idle";
   const eyeOffsetX = eyeX + caretX;
-  const eyeOffsetY = state === "email" ? 14 : state === "password-hidden" ? 1 : eyeY;
+  const emailLookY = Math.max(-1.5, Math.min(2.5, typingProgress * 1.4));
+  const eyeOffsetY = state === "email" ? emailLookY : state === "password-hidden" ? 1 : eyeY;
+  const eyeBodyX = state === "email" ? 0 : eyeOffsetX * 0.34;
+  const eyeBodyY = state === "email" ? 0 : eyeOffsetY * 0.25;
+  const pupilX = state === "email"
+    ? Math.max(-5.5, Math.min(5.5, typingCursorX * 0.95))
+    : eyeOffsetX * 0.34;
+  const pupilY = state === "email"
+    ? Math.max(-1.5, Math.min(1.8, emailLookY * 0.65))
+    : eyeOffsetY * 0.42;
   const eyeScaleWithExpression =
     expression === "error" ? 0.9 : expression === "busy" ? 0.92 : eyeScale;
+  const eyeLidScaleY = isBlinking
+    ? 0.08
+    : expression === "shy"
+      ? 0.72
+      : expression === "busy"
+        ? 0.9
+        : expression === "error"
+          ? 0.86
+          : 1;
   const pageRotateX = expression === "error" ? [0, -1.5, 1.5, -1, 0] : getRotateX();
   const pageTranslateY = expression === "busy" ? -1 : getBookTranslateY();
 
@@ -146,8 +197,27 @@ export function PrivacyBook({
         )}
       </AnimatePresence>
 
+      {/* Ground shadow and a restrained open-book glow give the mascot physical
+          presence without adding visual noise to the form. */}
       <motion.div
-        className="w-full h-full flex justify-center relative"
+        className="pointer-events-none absolute bottom-[-2px] left-1/2 z-0 h-2 w-[68px] -translate-x-1/2 rounded-full bg-emerald-950/25 blur-[5px]"
+        animate={{
+          opacity: expression === "busy" ? 0.12 : expression === "shy" ? 0.3 : 0.22,
+          scaleX: expression === "shy" ? 0.72 : expression === "delighted" ? 1.08 : 1,
+        }}
+        transition={smoothEase}
+      />
+      <motion.div
+        className="pointer-events-none absolute left-1/2 top-[9px] z-0 h-[62px] w-[70px] -translate-x-1/2 rounded-full bg-emerald-300/10 blur-[14px]"
+        animate={{
+          opacity: state === "password-hidden" ? 0.85 : expression === "busy" ? 0.18 : 0.35,
+          scale: state === "password-hidden" ? 1.06 : 0.9,
+        }}
+        transition={smoothEase}
+      />
+
+      <motion.div
+        className="relative z-10 w-full h-full flex justify-center"
         animate={{
           rotateX: pageRotateX,
           y: pageTranslateY,
@@ -219,9 +289,16 @@ export function PrivacyBook({
                boxShadow: "inset -7px 0 13px rgb(15 23 42 / 0.05), 0 2px 3px rgb(15 23 42 / 0.1)",
              } as CSSPropertiesWithWebKit}
           >
+             <span
+               className="pointer-events-none absolute left-0 top-0 h-3.5 w-3.5 bg-slate-100/90"
+               style={{ clipPath: "polygon(0 0, 100% 0, 0 100%)" }}
+             />
+             <span className="pointer-events-none absolute bottom-2 left-3 h-px w-8 bg-slate-300/60" />
+             <span className="pointer-events-none absolute bottom-4 left-5 h-px w-5 bg-slate-200/80" />
             <motion.div
               className="absolute top-[7px] right-[9px] h-1 w-3 rounded-full bg-slate-700/75 origin-right"
               animate={{
+                 x: state === "email" ? typingCursorX * 0.2 : 0,
                 rotate: expression === "curious" ? -18 : expression === "shy" ? 12 : expression === "error" ? 10 : -4,
                 scaleX: expression === "busy" ? 0.75 : 1,
               }}
@@ -232,13 +309,19 @@ export function PrivacyBook({
                className="relative w-3.5 h-3.5 rounded-full shadow-[inset_2px_2px_0_rgba(255,255,255,0.22),0_1px_2px_rgba(15,23,42,0.24)]"
                style={{ background: "radial-gradient(circle at 34% 28%, #ffffff 0 11%, #64748b 12% 28%, #1e293b 48%, #0f172a 100%)" }}
                animate={{
-                 x: eyeOffsetX,
-                 y: eyeOffsetY,
+                 x: eyeBodyX,
+                 y: eyeBodyY,
                  scale: eyeScaleWithExpression,
+                 scaleY: eyeLidScaleY,
                  rotate: expression === "busy" ? -8 : expression === "error" ? -5 : 0,
                }}
               transition={eyeTransition}
             >
+               <motion.span
+                 className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-950 shadow-[0_0_0_1px_rgba(15,23,42,0.16)]"
+                 animate={{ x: pupilX, y: pupilY }}
+                 transition={eyeTransition}
+               />
               <motion.span
                 className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-white/75"
                 animate={{ opacity: focused ? 0.95 : 0.65 }}
@@ -269,9 +352,16 @@ export function PrivacyBook({
                boxShadow: "inset 7px 0 13px rgb(15 23 42 / 0.05), 0 2px 3px rgb(15 23 42 / 0.1)",
              } as CSSPropertiesWithWebKit}
           >
+             <span
+               className="pointer-events-none absolute right-0 top-0 h-3.5 w-3.5 bg-slate-100/90"
+               style={{ clipPath: "polygon(0 0, 100% 0, 100% 100%)" }}
+             />
+             <span className="pointer-events-none absolute bottom-2 right-3 h-px w-8 bg-slate-300/60" />
+             <span className="pointer-events-none absolute bottom-4 right-5 h-px w-5 bg-slate-200/80" />
             <motion.div
               className="absolute top-[7px] left-[9px] h-1 w-3 rounded-full bg-slate-700/75 origin-left"
               animate={{
+                 x: state === "email" ? typingCursorX * 0.2 : 0,
                 rotate: expression === "curious" ? 18 : expression === "shy" ? -12 : expression === "error" ? -10 : 4,
                 scaleX: expression === "busy" ? 0.75 : 1,
               }}
@@ -282,13 +372,19 @@ export function PrivacyBook({
                className="relative w-3.5 h-3.5 rounded-full shadow-[inset_-2px_2px_0_rgba(255,255,255,0.22),0_1px_2px_rgba(15,23,42,0.24)]"
                style={{ background: "radial-gradient(circle at 34% 28%, #ffffff 0 11%, #64748b 12% 28%, #1e293b 48%, #0f172a 100%)" }}
                animate={{
-                 x: eyeOffsetX,
-                 y: eyeOffsetY,
+                 x: eyeBodyX,
+                 y: eyeBodyY,
                  scale: eyeScaleWithExpression,
+                 scaleY: eyeLidScaleY,
                  rotate: expression === "busy" ? 8 : expression === "error" ? 5 : 0,
                }}
               transition={eyeTransition}
             >
+               <motion.span
+                 className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-950 shadow-[0_0_0_1px_rgba(15,23,42,0.16)]"
+                 animate={{ x: pupilX, y: pupilY }}
+                 transition={eyeTransition}
+               />
               <motion.span
                 className="absolute -left-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-white/75"
                 animate={{ opacity: focused ? 0.95 : 0.65 }}
@@ -310,6 +406,27 @@ export function PrivacyBook({
         </div>
 
       </motion.div>
+
+      {/* Privacy cue: make the closed-book state communicate protection,
+          not only a changed facial expression. */}
+      <AnimatePresence>
+        {state === "password-visible" && (
+          <motion.div
+            key="privacy-lock"
+            initial={{ opacity: 0, scale: 0.65, y: -4, rotate: -8 }}
+            animate={{ opacity: 1, scale: 1, y: 0, rotate: 0 }}
+            exit={{ opacity: 0, scale: 0.65, y: -3, rotate: 8 }}
+            transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 330, damping: 17 }}
+            className="pointer-events-none absolute -right-1 top-1 z-30 flex h-6 w-6 items-end justify-center"
+            aria-hidden="true"
+          >
+            <span className="absolute top-0 h-3 w-3.5 rounded-t-full border-[2px] border-emerald-800/85 border-b-0" />
+            <span className="relative mb-0.5 block h-3.5 w-5 rounded-[4px] border border-emerald-950/50 bg-emerald-700 shadow-[0_2px_4px_rgba(15,23,42,0.2)]">
+              <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-100/90" />
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Keep the expression above the 3D page layers. The pages use
           overflow-hidden, so putting the mouth inside them makes it disappear. */}

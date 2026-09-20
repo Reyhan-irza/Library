@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, BookOpen, Edit, Trash2, Loader2, ImagePlus, X, UploadCloud } from "lucide-react";
+import { Plus, Search, BookOpen, Edit, Trash2, Loader2, ImagePlus, X, UploadCloud, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import {
   useListBooks, useCreateBook, useUpdateBook, useDeleteBook,
@@ -212,6 +212,7 @@ function BookForm({ initial, onSubmit, loading, categories, racks }: {
 }
 
 export default function BooksPage() {
+  const LOW_STOCK_THRESHOLD = 1;
   const { data: books = [], isLoading } = useListBooks();
   const { data: categories = [] } = useListCategories();
   const { data: racks = [] } = useListRacks();
@@ -224,7 +225,7 @@ export default function BooksPage() {
 
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState<number | "">("");
-  const [filterStatus, setFilterStatus] = useState<"" | "available" | "borrowed">("");
+  const [filterStatus, setFilterStatus] = useState<"" | "available" | "borrowed" | "low-stock">("");
   const [showAdd, setShowAdd] = useState(false);
   const [editBook, setEditBook] = useState<Book | null>(null);
   const [detailBook, setDetailBook] = useState<Book | null>(null);
@@ -234,9 +235,12 @@ export default function BooksPage() {
     const q = search.toLowerCase();
     const matchSearch = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q) || b.isbn.toLowerCase().includes(q);
     const matchCat = filterCat === "" || b.categoryId === filterCat;
-    const matchStatus = !filterStatus || b.status === filterStatus;
+    const matchStatus = filterStatus === "low-stock"
+      ? b.availableStock <= LOW_STOCK_THRESHOLD
+      : !filterStatus || b.status === filterStatus;
     return matchSearch && matchCat && matchStatus;
   });
+  const lowStockCount = books.filter(book => book.availableStock <= LOW_STOCK_THRESHOLD).length;
 
   async function handleCreate(data: BookInput, coverFile?: File) {
     try {
@@ -283,7 +287,14 @@ export default function BooksPage() {
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold gradient-text font-heading">Koleksi Buku</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{books.length} buku terdaftar</p>
+          <div className="mt-0.5 flex flex-wrap items-center gap-2">
+            <p className="text-sm text-muted-foreground">{books.length} buku terdaftar</p>
+            {lowStockCount > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                <AlertTriangle size={11} /> {lowStockCount} stok rendah
+              </span>
+            )}
+          </div>
         </div>
         <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
           onClick={() => setShowAdd(true)}
@@ -311,6 +322,7 @@ export default function BooksPage() {
           <option value="">Semua Status</option>
           <option value="available">Tersedia</option>
           <option value="borrowed">Dipinjam</option>
+          <option value="low-stock">Stok rendah</option>
         </select>
       </motion.div>
 
@@ -340,6 +352,11 @@ export default function BooksPage() {
                 )}>
                   {book.status === "available" ? "Tersedia" : "Dipinjam"}
                 </div>
+                {book.availableStock <= LOW_STOCK_THRESHOLD && (
+                  <div className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md bg-amber-500/95 px-1.5 py-1 text-[9px] font-bold text-white shadow-sm">
+                    <AlertTriangle size={10} /> Stok rendah
+                  </div>
+                )}
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={e => { e.stopPropagation(); setEditBook(book); }}
                     className="w-7 h-7 rounded-lg bg-card/90 backdrop-blur-sm flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all shadow-sm">

@@ -1,7 +1,22 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { ArrowLeft, CheckCircle2, Clock3, Loader2, Search, ShieldCheck, XCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  Check,
+  CheckCircle2,
+  ClipboardCheck,
+  Clock3,
+  Copy,
+  Loader2,
+  RotateCcw,
+  Search,
+  Send,
+  ShieldCheck,
+  XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 import { useLookupPublicRequestStatus } from "@/hooks/api";
 import type { PublicRequestStatus } from "@/types";
 
@@ -14,6 +29,13 @@ const statusLabels: Record<PublicRequestStatus["status"], string> = {
   overdue: "Terlambat",
   cancelled: "Dibatalkan",
 };
+
+const progressSteps = [
+  { key: "pending", label: "Request dikirim", description: "Data sudah diterima sistem.", icon: Send },
+  { key: "approved", label: "Disetujui admin", description: "Request sedang diproses untuk peminjaman.", icon: ClipboardCheck },
+  { key: "borrowed", label: "Buku dipinjam", description: "Buku sedang berada pada peminjam.", icon: BookOpen },
+  { key: "returned", label: "Dikembalikan", description: "Peminjaman sudah selesai.", icon: RotateCcw },
+] as const;
 
 export default function RequestStatusPage() {
   const [requestCode, setRequestCode] = useState("");
@@ -78,15 +100,108 @@ export default function RequestStatusPage() {
 
 function StatusResult({ result }: { result: PublicRequestStatus }) {
   const rejected = result.status === "rejected" || result.status === "cancelled";
+  const isOverdue = result.status === "overdue";
+  const currentStepIndex = result.status === "returned"
+    ? progressSteps.length - 1
+    : result.status === "borrowed" || isOverdue
+      ? 2
+      : result.status === "approved"
+        ? 1
+        : 0;
+
+  async function copyRequestCode() {
+    try {
+      await navigator.clipboard.writeText(result.requestCode);
+      toast.success("Kode request berhasil disalin");
+    } catch {
+      toast.error("Kode tidak dapat disalin otomatis");
+    }
+  }
+
   return (
     <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_44px_-28px_rgba(15,23,42,0.38)] sm:p-7">
       <div className="flex items-start gap-3">
-        {rejected ? <XCircle className="mt-0.5 h-5 w-5 text-rose-600" /> : <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-600" />}
-        <div>
+        <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+          rejected ? "bg-rose-50 text-rose-600" : isOverdue ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-700"
+        }`}>
+          {rejected ? <XCircle className="h-5 w-5" /> : isOverdue ? <Clock3 className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
+        </div>
+        <div className="min-w-0 flex-1">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Status request</p>
-          <p className="mt-1 font-mono text-lg font-extrabold tracking-wider text-slate-900">{result.requestCode}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <p className="font-mono text-lg font-extrabold tracking-wider text-slate-900">{result.requestCode}</p>
+            <button
+              type="button"
+              onClick={copyRequestCode}
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-bold text-slate-500 transition hover:border-emerald-300 hover:text-emerald-700"
+              aria-label={`Salin kode request ${result.requestCode}`}
+            >
+              <Copy className="h-3 w-3" /> Salin
+            </button>
+          </div>
         </div>
       </div>
+
+      {rejected ? (
+        <div className="mt-6 rounded-xl border border-rose-100 bg-rose-50/70 p-4">
+          <p className="text-sm font-bold text-rose-900">{statusLabels[result.status]}</p>
+          <p className="mt-1 text-xs leading-relaxed text-rose-700">
+            Request ini sudah tidak melanjutkan proses peminjaman.
+          </p>
+        </div>
+      ) : (
+        <div className="mt-6 rounded-xl border border-emerald-900/[0.08] bg-emerald-50/45 p-4">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-800/60">Progres peminjaman</p>
+              <p className={`mt-1 text-sm font-bold ${isOverdue ? "text-amber-700" : "text-emerald-900"}`}>
+                {statusLabels[result.status]}
+              </p>
+            </div>
+            <span className="rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold text-emerald-800 shadow-sm">
+              {currentStepIndex + 1} / {progressSteps.length}
+            </span>
+          </div>
+          <div className="space-y-0">
+            {progressSteps.map((step, index) => {
+              const Icon = step.icon;
+              const complete = index < currentStepIndex || result.status === "returned";
+              const active = index === currentStepIndex;
+              return (
+                <div key={step.key} className="relative flex gap-3 pb-4 last:pb-0">
+                  {index < progressSteps.length - 1 && (
+                    <span className={`absolute left-[15px] top-8 h-[calc(100%-8px)] w-px ${
+                      complete ? "bg-emerald-500/60" : "bg-emerald-900/10"
+                    }`} aria-hidden="true" />
+                  )}
+                  <motion.span
+                    initial={false}
+                    animate={{ scale: active ? 1.04 : 1 }}
+                    className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border ${
+                      complete || active
+                        ? isOverdue && active
+                          ? "border-amber-300 bg-amber-100 text-amber-700"
+                          : "border-emerald-300 bg-emerald-100 text-emerald-700"
+                        : "border-emerald-900/10 bg-white/70 text-slate-300"
+                    }`}
+                  >
+                    {complete && !active ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+                  </motion.span>
+                  <div className="pt-0.5">
+                    <p className={`text-xs font-bold ${active ? (isOverdue ? "text-amber-800" : "text-emerald-900") : "text-slate-600"}`}>
+                      {step.label}
+                    </p>
+                    <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
+                      {active && isOverdue ? "Tanggal pengembalian sudah terlewati." : step.description}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <dl className="mt-6 grid gap-4 border-t border-slate-100 pt-5 sm:grid-cols-2">
         <Detail label="Peminjam" value={result.requesterName} />
         <Detail label="Kelas" value={result.requesterClass} />
