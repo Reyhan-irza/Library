@@ -142,7 +142,11 @@ export default function LoginPage() {
         {/* Rich textural background for form panel */}
         <div
           className="absolute inset-0 pointer-events-none opacity-[0.02]"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='2' cy='2' r='1' fill='%23000'/%3E%3C/svg%3E")` }}
+          style={{
+            backgroundImage:
+              "radial-gradient(circle, hsl(161 52% 30% / 0.5) 1px, transparent 1px), linear-gradient(135deg, transparent 0 48%, hsl(161 52% 30% / 0.18) 49% 50%, transparent 51%)",
+            backgroundSize: "22px 22px, 44px 44px",
+          }}
           aria-hidden="true"
         />
 
@@ -185,11 +189,16 @@ export default function LoginPage() {
 
         {/* ── Form content ──────────────────────────────────────────────────── */}
         <div className="flex-1 flex flex-col justify-center px-6 sm:px-8 lg:px-10 py-6 lg:py-10 relative">
+          <div className="absolute -right-20 top-1/2 hidden h-64 w-64 -translate-y-1/2 rounded-full border border-emerald-900/[0.06] lg:block" aria-hidden="true" />
+          <div className="absolute -right-8 top-1/2 hidden h-40 w-40 -translate-y-1/2 rounded-full border border-emerald-900/[0.06] lg:block" aria-hidden="true" />
 
           <div className="w-full max-w-[360px] mx-auto lg:mx-0 lg:max-w-[400px] lg:bg-white lg:shadow-[0_4px_40px_-12px_rgba(0,0,0,0.08)] lg:border lg:border-slate-100 lg:rounded-[28px] lg:p-9 relative">
 
             {/* Desktop form top edge decorative highlight */}
             <div className="hidden lg:block absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-t-[28px] opacity-80" />
+            <div className="absolute right-6 top-6 hidden text-[8px] font-bold uppercase tracking-[0.24em] text-slate-300 lg:block" aria-hidden="true">
+              Access / 01
+            </div>
 
             {/* VIREON wordmark — desktop only */}
             <motion.div
@@ -440,6 +449,12 @@ export default function LoginPage() {
             loading="eager"
             decoding="sync"
           />
+          <div className="vireon-dark-line-field absolute inset-0 opacity-40 mix-blend-screen" />
+          <div className="absolute -right-20 top-16 h-[420px] w-[420px] rounded-full border border-emerald-100/[0.10]" />
+          <div className="absolute -right-2 top-32 h-[280px] w-[280px] rounded-full border border-emerald-100/[0.08]" />
+          <div className="absolute left-10 top-20 hidden text-[clamp(4rem,8vw,8rem)] font-black leading-none tracking-[-0.08em] text-emerald-50/[0.06] xl:block">
+            VIREON
+          </div>
           {/* Dark emerald overlay — identical to landing page hero */}
           <div
             className="absolute inset-0"
@@ -483,6 +498,10 @@ export default function LoginPage() {
 
           {/* ── Dashboard preview card with floating chips ─────────────── */}
           <div className="relative">
+            <div className="mb-5 flex items-center gap-3 text-[9px] font-bold uppercase tracking-[0.24em] text-emerald-100/50">
+              <span className="h-px w-8 bg-emerald-200/40" />
+              Library workspace
+            </div>
             {/* Floating chip — top right */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
