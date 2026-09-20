@@ -243,6 +243,8 @@ export default function LoginPage() {
                 <PrivacyBook
                   state={formState}
                   typingProgress={typingProgress}
+                  hasError={Boolean(authError)}
+                  isSubmitting={login.isPending}
                   className="mr-2 sm:mr-0 shrink-0 -mt-2 lg:mt-0"
                 />
               </div>
