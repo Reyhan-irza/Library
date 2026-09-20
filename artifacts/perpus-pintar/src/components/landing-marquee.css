@@ -1,6 +1,12 @@
 .vireon-marquee-track {
-  animation: vireon-marquee-scroll 12s linear infinite;
+  animation: vireon-marquee-scroll 18s linear infinite;
   will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+.vireon-marquee {
+  background-image: radial-gradient(circle at 50% 0%, rgba(190, 255, 230, 0.11), transparent 52%);
 }
 
 .vireon-marquee:hover .vireon-marquee-track,
