@@ -591,6 +591,18 @@ function HeroSection() {
       ref={sectionRef}
       className="relative min-h-[92vh] flex items-center pt-[60px] overflow-hidden"
     >
+      {/* Editorial framing keeps the hero from feeling like a plain photo block. */}
+      <div className="absolute inset-0 pointer-events-none select-none" aria-hidden="true">
+        <div className="absolute -right-28 top-24 h-[420px] w-[420px] rounded-full border border-emerald-100/10" />
+        <div className="absolute -right-16 top-36 h-[300px] w-[300px] rounded-full border border-emerald-100/[0.08]" />
+        <div className="absolute left-0 top-1/2 h-px w-[18%] bg-gradient-to-r from-transparent to-emerald-100/20" />
+        <div className="absolute right-0 top-1/2 h-px w-[16%] bg-gradient-to-l from-transparent to-emerald-100/20" />
+        <div className="absolute bottom-10 left-5 hidden items-center gap-3 text-[9px] font-semibold uppercase tracking-[0.28em] text-emerald-100/35 lg:flex">
+          <span className="h-px w-8 bg-emerald-100/30" />
+          VIREON / LIBRARY SYSTEM
+        </div>
+      </div>
+
       {/* Library bg with parallax */}
       <motion.div
         className="absolute inset-0 scale-[1.12] pointer-events-none select-none"
@@ -812,6 +824,9 @@ function MarqueeTicker() {
     >
       <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none" style={{ background: "linear-gradient(to right, hsl(161 52% 26%), transparent)" }} />
       <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none" style={{ background: "linear-gradient(to left, hsl(161 52% 26%), transparent)" }} />
+      <span className="absolute left-4 top-1/2 z-20 hidden -translate-y-1/2 text-[8px] font-bold uppercase tracking-[0.2em] text-white/35 lg:block" aria-hidden="true">
+        Index 01
+      </span>
 
       <div className="vireon-marquee-track flex w-max items-center whitespace-nowrap" data-testid="landing-marquee-track">
         {[0, 1].map((copy) => (
@@ -1000,9 +1015,15 @@ function HowItWorksSection() {
           <rect width="100%" height="100%" fill="url(#how-grid)" />
         </svg>
         <div className="absolute top-0 right-0 w-[500px] h-[500px]" style={{ background: "radial-gradient(ellipse at 100% 0%, hsl(161 52% 30% / 0.06) 0%, transparent 60%)" }} />
+        <div className="absolute bottom-10 left-8 h-28 w-28 rounded-full border border-emerald-900/[0.08] sm:left-16" />
+        <div className="absolute bottom-16 left-14 h-16 w-16 rounded-full border border-emerald-900/[0.08] sm:left-20" />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="absolute right-4 top-2 hidden items-center gap-2 text-[9px] font-bold uppercase tracking-[0.24em] text-slate-400 lg:flex" aria-hidden="true">
+          <span className="h-px w-10 bg-emerald-900/20" />
+          01 — Flow
+        </div>
         {/* Header with label reveal */}
         <motion.div {...fadeUpView(0, reduced ?? false)} className="max-w-xl mb-16">
           <motion.p
@@ -1195,6 +1216,7 @@ function FeaturesSection() {
 
   return (
     <section id="features" className="relative scroll-mt-20 py-24 sm:py-32 bg-[#fbfaf6] overflow-hidden">
+      <div className="vireon-dot-field absolute -right-24 top-20 h-72 w-72 rounded-full opacity-30 pointer-events-none" aria-hidden="true" />
       <div
         className="absolute -top-24 left-1/2 -translate-x-1/2 w-[800px] h-[600px] pointer-events-none"
         style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(161 52% 30% / 0.05) 0%, transparent 60%)" }}
@@ -1202,6 +1224,9 @@ function FeaturesSection() {
       />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="absolute right-4 top-0 hidden text-[9px] font-bold uppercase tracking-[0.24em] text-slate-400 lg:block" aria-hidden="true">
+          02 — Modules
+        </div>
         <motion.div {...fadeUpView(0, reduced ?? false)} className="max-w-xl mb-14">
           <motion.p
             initial={reduced ? {} : { clipPath: "inset(0 100% 0 0)", opacity: 0 }}
@@ -1283,6 +1308,9 @@ function AboutSection() {
         style={{ x: reduced ? undefined : bgX, background: "radial-gradient(circle, hsl(161 52% 30% / 0.06) 0%, transparent 65%)" }}
         aria-hidden="true"
       />
+      <div className="absolute right-[-8%] top-12 hidden select-none text-[clamp(5rem,14vw,13rem)] font-black leading-none tracking-[-0.08em] text-emerald-950/[0.035] lg:block" aria-hidden="true">
+        VIREON
+      </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
@@ -1419,6 +1447,8 @@ function CTASection() {
 
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <div className="absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-100/[0.08]" />
+        <div className="absolute left-1/2 top-1/2 h-[540px] w-[540px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-100/[0.04]" />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
