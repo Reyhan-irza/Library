@@ -214,6 +214,7 @@ export default function CatalogPage() {
         open={!!selectedBook}
         onClose={() => { if (!submitRequest.isPending) setSelectedBook(null); }}
         title="Ajukan Peminjaman"
+        scrollable
       >
         {selectedBook && (
           <PublicRequestForm
@@ -268,18 +269,28 @@ function PublicRequestForm({
           notes: form.notes.trim(),
         });
       }}
-      className="space-y-4"
+      className="space-y-5"
     >
-      <div className="rounded-xl bg-emerald-50 p-3">
-        <p className="text-sm font-bold text-emerald-950">{book.title}</p>
-        <p className="mt-1 text-xs text-emerald-800">{book.availableCopies} eksemplar tersedia · {book.author}</p>
+      <div className="flex items-start gap-3 rounded-2xl border border-primary/15 bg-primary/10 p-3.5">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+          <BookOpen className="h-4 w-4" />
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold text-foreground">{book.title}</p>
+          <p className="mt-1 truncate text-xs text-muted-foreground">
+            {book.availableCopies} eksemplar tersedia · {book.author}
+          </p>
+        </div>
       </div>
       <fieldset>
-        <legend className="text-xs font-bold uppercase tracking-wider text-slate-500">Jenis peminjaman</legend>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        <legend className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Jenis peminjaman</legend>
+        <p className="mt-1 text-xs text-foreground/60">Pilih penggunaan buku untuk request ini.</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
           {typeOptions.map((option) => (
-            <label key={option.value} className={`cursor-pointer rounded-xl border p-3 text-sm transition ${
-              form.borrowingType === option.value ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200"
+            <label key={option.value} className={`cursor-pointer rounded-2xl border p-3.5 text-sm transition ${
+              form.borrowingType === option.value
+                ? "border-primary/60 bg-primary/12 text-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.08)]"
+                : "border-border bg-background/25 text-foreground/75 hover:border-primary/35 hover:bg-primary/5"
             }`}>
               <input
                 type="radio"
@@ -289,7 +300,10 @@ function PublicRequestForm({
                 onChange={(event) => update("borrowingType", event.target.value)}
                 className="sr-only"
               />
-              <span className="font-semibold">{option.label}</span>
+              <span className="flex items-center justify-between gap-2 font-semibold">
+                {option.label}
+                <span className={`h-2 w-2 rounded-full transition ${form.borrowingType === option.value ? "bg-primary" : "bg-muted-foreground/30"}`} />
+              </span>
             </label>
           ))}
         </div>
@@ -300,19 +314,34 @@ function PublicRequestForm({
         <Field label="NIS/NISN *" value={form.requesterStudentId} onChange={(value) => update("requesterStudentId", value)} required />
         <Field label="Kontak (opsional)" value={form.requesterContact} onChange={(value) => update("requesterContact", value)} />
         <label className="block">
-          <span className="text-xs font-semibold text-slate-600">Jumlah *</span>
-          <input type="number" min={1} max={book.availableCopies} value={form.quantity} onChange={(event) => update("quantity", event.target.value)} required className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-emerald-400" />
+          <span className="text-xs font-semibold text-foreground/75">Jumlah *</span>
+          <input
+            type="number"
+            min={1}
+            max={book.availableCopies}
+            value={form.quantity}
+            onChange={(event) => update("quantity", event.target.value)}
+            required
+            inputMode="numeric"
+            className="mt-1 h-11 w-full rounded-xl border border-border bg-background/25 px-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/60 focus:border-primary focus:ring-2 focus:ring-primary/15"
+          />
         </label>
       </div>
       <label className="block">
-        <span className="text-xs font-semibold text-slate-600">Catatan (opsional)</span>
-        <textarea value={form.notes} onChange={(event) => update("notes", event.target.value)} rows={3} className="mt-1 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+        <span className="text-xs font-semibold text-foreground/75">Catatan (opsional)</span>
+        <textarea
+          value={form.notes}
+          onChange={(event) => update("notes", event.target.value)}
+          rows={3}
+          placeholder="Tambahkan catatan jika diperlukan"
+          className="mt-1 w-full resize-none rounded-xl border border-border bg-background/25 px-3 py-2.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/60 focus:border-primary focus:ring-2 focus:ring-primary/15"
+        />
       </label>
-      <div className="flex items-center justify-end gap-2 pt-1">
-        <button type="button" onClick={onCancel} disabled={loading} className="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100">
+      <div className="sticky bottom-0 -mx-5 -mb-5 flex items-center gap-2 border-t border-border/70 bg-card/95 px-5 pb-5 pt-4 backdrop-blur-md">
+        <button type="button" onClick={onCancel} disabled={loading} className="inline-flex h-11 items-center justify-center gap-1 rounded-xl px-3 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground sm:px-4">
           <X className="h-4 w-4" /> Batal
         </button>
-        <button type="submit" disabled={loading} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60">
+        <button type="submit" disabled={loading} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-[0_8px_20px_hsl(var(--primary)/0.2)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60">
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
           Kirim Request
         </button>
@@ -324,8 +353,13 @@ function PublicRequestForm({
 function Field({ label, value, onChange, required = false }: { label: string; value: string; onChange: (value: string) => void; required?: boolean }) {
   return (
     <label className="block">
-      <span className="text-xs font-semibold text-slate-600">{label}</span>
-      <input value={value} onChange={(event) => onChange(event.target.value)} required={required} className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-emerald-400" />
+      <span className="text-xs font-semibold text-foreground/75">{label}</span>
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        required={required}
+        className="mt-1 h-11 w-full rounded-xl border border-border bg-background/25 px-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/60 focus:border-primary focus:ring-2 focus:ring-primary/15"
+      />
     </label>
   );
 }
