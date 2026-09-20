@@ -128,6 +128,12 @@ export default function LoginPage() {
   }
 
   const isSubmittable = email.trim().length > 0 && password.length > 0 && !login.isPending;
+  const activeTypingValue = formState === "email" ? email : password;
+  const typingLimit = formState === "email" ? 28 : 16;
+  const typingProgress =
+    activeTypingValue.length === 0
+      ? -0.45
+      : Math.min(activeTypingValue.length / typingLimit, 1) * 1.45 - 0.45;
 
   return (
     <div
@@ -234,7 +240,11 @@ export default function LoginPage() {
                   Buka ruang bacaanmu
                 </div>
 
-                <PrivacyBook state={formState} className="mr-2 sm:mr-0 shrink-0 -mt-2 lg:mt-0" />
+                <PrivacyBook
+                  state={formState}
+                  typingProgress={typingProgress}
+                  className="mr-2 sm:mr-0 shrink-0 -mt-2 lg:mt-0"
+                />
               </div>
 
               <h1 className="text-[1.875rem] sm:text-[2.125rem] font-extrabold text-slate-900 tracking-[-0.025em] leading-[1.08] mb-3 mt-2 sm:mt-0">
