@@ -111,16 +111,50 @@ create policy "Authenticated users can delete book covers"
   on storage.objects for delete to authenticated
   using (bucket_id = 'book-covers');
 
+-- ── Member Photo Storage ───────────────────────────────────────────────────
+-- Private bucket: only authenticated library staff can view student photos.
+insert into storage.buckets (id, name, public)
+values ('member-photos', 'member-photos', false)
+on conflict (id) do update set public = false;
+
+drop policy if exists "Authenticated users can view member photos" on storage.objects;
+create policy "Authenticated users can view member photos"
+  on storage.objects for select to authenticated
+  using (bucket_id = 'member-photos');
+
+drop policy if exists "Authenticated users can upload member photos" on storage.objects;
+create policy "Authenticated users can upload member photos"
+  on storage.objects for insert to authenticated
+  with check (bucket_id = 'member-photos');
+
+drop policy if exists "Authenticated users can update member photos" on storage.objects;
+create policy "Authenticated users can update member photos"
+  on storage.objects for update to authenticated
+  using (bucket_id = 'member-photos')
+  with check (bucket_id = 'member-photos');
+
+drop policy if exists "Authenticated users can delete member photos" on storage.objects;
+create policy "Authenticated users can delete member photos"
+  on storage.objects for delete to authenticated
+  using (bucket_id = 'member-photos');
+
 -- ── Members ───────────────────────────────────────────────────────────────
 create table if not exists members (
   id             serial primary key,
   member_number  text not null unique,
   name           text not null,
+  student_id     text,
+  class_name     text,
   email          text unique,
   phone          text,
   address        text,
+  photo_path     text,
   created_at     timestamptz not null default now()
 );
+
+create unique index if not exists members_student_id_unique_idx
+  on members (lower(regexp_replace(btrim(student_id), '\s+', '', 'g')))
+  where student_id is not null and btrim(student_id) <> '';
 
 alter table members enable row level security;
 

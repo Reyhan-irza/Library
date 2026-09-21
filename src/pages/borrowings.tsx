@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Plus, Search, ArrowLeftRight, Loader2, CheckCircle2, Clock,
-  AlertTriangle, XCircle, ClipboardCheck, Inbox, ListChecks,
+  AlertTriangle, XCircle, ClipboardCheck, Inbox, ListChecks, Camera,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -39,6 +39,10 @@ const borrowingTypeLabel = {
 } as const;
 
 type QueueTab = "pending" | "borrowed" | "overdue" | "returned" | "all";
+
+function normalizeStudentId(value?: string | null): string {
+  return (value ?? "").toLowerCase().replace(/\s+/g, "");
+}
 
 const queueTabs: { value: QueueTab; label: string }[] = [
   { value: "pending", label: "Perlu ditinjau" },
@@ -105,6 +109,8 @@ export default function BorrowingsPage() {
   const [returnNotes, setReturnNotes] = useState("");
   const [approveId, setApproveId] = useState<number | null>(null);
   const [approveDueDate, setApproveDueDate] = useState(format(addDays(new Date(), 7), "yyyy-MM-dd"));
+  const [approvePhoto, setApprovePhoto] = useState<File | null>(null);
+  const [approvePhotoPreview, setApprovePhotoPreview] = useState<string | null>(null);
   const [rejectId, setRejectId] = useState<number | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [form, setForm] = useState<{
@@ -122,6 +128,16 @@ export default function BorrowingsPage() {
     dueDate: format(addDays(new Date(), 7), "yyyy-MM-dd"),
     notes: "",
   });
+
+  useEffect(() => {
+    if (!approvePhoto) {
+      setApprovePhotoPreview(null);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(approvePhoto);
+    setApprovePhotoPreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [approvePhoto]);
 
   const pendingCount = borrowings.filter((borrowing) => borrowing.status === "pending").length;
   const approvedTodayCount = borrowings.filter((borrowing) =>
@@ -211,17 +227,31 @@ export default function BorrowingsPage() {
 
   function handleApprove() {
     if (!approveId) return;
+    const approveBorrowing = borrowings.find((borrowing) => borrowing.id === approveId);
+    const matchedMember = approveBorrowing?.requesterStudentId
+      ? members.find((member) => normalizeStudentId(member.studentId) === normalizeStudentId(approveBorrowing.requesterStudentId))
+      : undefined;
+    if (!matchedMember?.photoUrl && !approvePhoto) {
+      toast.error("Unggah foto siswa terlebih dahulu untuk membuat profil anggota");
+      return;
+    }
     approveRequest.mutate(
-      { borrowingId: approveId, dueDate: approveDueDate },
+      { borrowingId: approveId, dueDate: approveDueDate, photoFile: approvePhoto ?? undefined },
       {
         onSuccess: () => {
           toast.success("Request disetujui dan stok diperbarui");
           setApproveId(null);
+          setApprovePhoto(null);
         },
         onError: (error: any) => toast.error(error?.message ?? "Gagal menyetujui request"),
       },
     );
   }
+
+  const approveBorrowing = approveId ? borrowings.find((borrowing) => borrowing.id === approveId) : undefined;
+  const matchedApproveMember = approveBorrowing?.requesterStudentId
+    ? members.find((member) => normalizeStudentId(member.studentId) === normalizeStudentId(approveBorrowing.requesterStudentId))
+    : undefined;
 
   function handleReject() {
     if (!rejectId || !rejectionReason.trim()) {
@@ -335,7 +365,16 @@ export default function BorrowingsPage() {
                   needsAttention && "border-amber-400/50 bg-amber-500/[0.035]",
                 )}
               >
-                <div className={cn("flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl", config.className)}><Icon size={15} /></div>
+                <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/10">
+                  {borrowing.memberPhotoUrl ? (
+                    <img src={borrowing.memberPhotoUrl} alt={`Foto ${borrowing.memberName}`} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-sm font-bold text-primary">{borrowing.memberName.charAt(0).toUpperCase()}</span>
+                  )}
+                  <div className={cn("absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-card", config.className)}>
+                    <Icon size={9} />
+                  </div>
+                </div>
                 <div className="min-w-0 flex-1 w-full">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -365,7 +404,7 @@ export default function BorrowingsPage() {
                 </div>
                 {borrowing.status === "pending" ? (
                   <div className="flex w-full flex-shrink-0 gap-1.5 sm:w-auto">
-                    <button onClick={() => setApproveId(borrowing.id)} disabled={approveRequest.isPending} className="inline-flex flex-1 items-center justify-center gap-1 rounded-xl bg-primary/10 px-2.5 py-2 text-xs font-bold text-primary transition-all hover:bg-primary hover:text-primary-foreground disabled:opacity-50 sm:flex-none">
+                     <button onClick={() => { setApprovePhoto(null); setApproveId(borrowing.id); }} disabled={approveRequest.isPending} className="inline-flex flex-1 items-center justify-center gap-1 rounded-xl bg-primary/10 px-2.5 py-2 text-xs font-bold text-primary transition-all hover:bg-primary hover:text-primary-foreground disabled:opacity-50 sm:flex-none">
                       <ClipboardCheck size={13} /> Setujui
                     </button>
                     <button onClick={() => setRejectId(borrowing.id)} disabled={rejectRequest.isPending} className="inline-flex flex-1 items-center justify-center gap-1 rounded-xl bg-rose-500/10 px-2.5 py-2 text-xs font-bold text-rose-600 transition-all hover:bg-rose-500 hover:text-white disabled:opacity-50 sm:flex-none">
@@ -435,7 +474,45 @@ export default function BorrowingsPage() {
 
       <AppModal open={!!approveId} onClose={() => setApproveId(null)} title="Setujui Request">
         <div className="space-y-4">
+          {approveBorrowing && (
+            <div className="flex items-center gap-3 rounded-2xl border border-primary/15 bg-primary/5 p-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/15">
+                {matchedApproveMember?.photoUrl ? (
+                  <img src={matchedApproveMember.photoUrl} alt={`Foto ${approveBorrowing.memberName}`} className="h-full w-full object-cover" />
+                ) : approvePhotoPreview ? (
+                  <img src={approvePhotoPreview} alt="Pratinjau foto siswa" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-lg font-extrabold text-primary">{approveBorrowing.memberName.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-foreground">{approveBorrowing.memberName}</p>
+                <p className="text-xs text-muted-foreground">
+                  {approveBorrowing.requesterStudentId || "NIS/NISN belum tersedia"}
+                  {approveBorrowing.requesterClass ? ` · ${approveBorrowing.requesterClass}` : ""}
+                </p>
+                <p className="mt-1 text-[10px] font-semibold text-primary">
+                  {matchedApproveMember ? "Anggota ditemukan, request akan dihubungkan" : "Anggota baru akan dibuat otomatis"}
+                </p>
+              </div>
+            </div>
+          )}
           <p className="text-sm text-muted-foreground">Stok akan dikurangi setelah approval berhasil. Ketersediaan akan diperiksa ulang di database.</p>
+          <label className="block">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-foreground/70">
+              <Camera size={13} /> Foto siswa {!matchedApproveMember?.photoUrl && "*"}
+            </span>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              required={!matchedApproveMember?.photoUrl}
+              onChange={(event) => setApprovePhoto(event.target.files?.[0] ?? null)}
+              className="mt-1 block w-full cursor-pointer rounded-xl border border-border bg-background/60 px-3 py-2 text-xs text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-2.5 file:py-1.5 file:text-xs file:font-semibold file:text-primary"
+            />
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              {matchedApproveMember?.photoUrl ? "Kosongkan jika foto anggota sudah benar. Pilih foto baru untuk menggantinya." : "Wajib untuk membuat profil anggota baru · JPG, PNG, atau WEBP · maksimal 5 MB"}
+            </p>
+          </label>
           <label className="block">
             <span className="text-xs font-semibold uppercase tracking-wider text-foreground/70">Tanggal Jatuh Tempo *</span>
             <input type="date" value={approveDueDate} onChange={(event) => setApproveDueDate(event.target.value)} className="mt-1 h-10 w-full rounded-xl border border-border bg-background/60 px-3 text-sm focus:border-primary focus:outline-none" />

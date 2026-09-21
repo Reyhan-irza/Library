@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { setUser, clearUser, getUser } from '@/lib/auth';
 import { parseLandingStats, type LandingStats } from '@/lib/public-stats';
+import { createMemberPhotoUrls, removeMemberPhoto, uploadMemberPhoto } from '@/lib/member-photo';
 import type {
   Book, BookInput, BookUpdate,
   Category, CategoryInput,
@@ -70,17 +71,19 @@ function mapBook(row: any): Book {
   };
 }
 
-function mapBorrowing(row: any): Borrowing {
+function mapBorrowing(row: any, memberPhotoUrls: Record<string, string> = {}): Borrowing {
   const today = new Date();
   const due = row.due_date ? parseISO(row.due_date) : null;
   let status: Borrowing['status'] = row.status;
   if (status === 'borrowed' && due && differenceInDays(today, due) > 0) status = 'overdue';
+  const memberPhotoPath = row.members?.photo_path ?? null;
   return {
     id: row.id,
     memberId: row.member_id,
     bookId: row.book_id,
     memberName: row.members?.name ?? row.requester_name ?? '-',
     memberNumber: row.members?.member_number ?? '-',
+    memberPhotoUrl: memberPhotoPath ? memberPhotoUrls[memberPhotoPath] ?? null : null,
     requesterName: row.requester_name,
     requesterClass: row.requester_class,
     requesterStudentId: row.requester_student_id,
@@ -418,6 +421,7 @@ export function useListMembers() {
       const { data: members, error } = await supabase.from('members').select('*').order('name');
       if (error) throw error;
       const { data: borrows } = await supabase.from('borrowings').select('member_id, fine, status');
+      const photoUrls = await createMemberPhotoUrls((members ?? []).map((member: any) => member.photo_path));
       const borrowMap: Record<number, { count: number; fine: number }> = {};
       (borrows ?? []).forEach((b: any) => {
         if (!borrowMap[b.member_id]) borrowMap[b.member_id] = { count: 0, fine: 0 };
@@ -428,9 +432,12 @@ export function useListMembers() {
         id: m.id,
         memberNumber: m.member_number,
         name: m.name,
+        studentId: m.student_id,
+        className: m.class_name,
         email: m.email,
         phone: m.phone,
         address: m.address,
+        photoUrl: m.photo_path ? photoUrls[m.photo_path] ?? null : null,
         borrowCount: borrowMap[m.id]?.count ?? 0,
         fine: borrowMap[m.id]?.fine ?? 0,
         createdAt: m.created_at,
@@ -443,9 +450,24 @@ export function useCreateMember() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: MemberInput) => {
-      const { data, error } = await supabase.from('members').insert({ name: input.name, email: input.email ?? null, phone: input.phone ?? null, address: input.address ?? null }).select().single();
-      if (error) throw error;
-      return data;
+      let photoPath: string | undefined;
+      try {
+        if (input.photoFile) photoPath = await uploadMemberPhoto(input.photoFile);
+        const { data, error } = await supabase.from('members').insert({
+          name: input.name,
+          student_id: input.studentId?.trim() || null,
+          class_name: input.className?.trim() || null,
+          email: input.email ?? null,
+          phone: input.phone ?? null,
+          address: input.address ?? null,
+          photo_path: photoPath ?? null,
+        }).select().single();
+        if (error) throw error;
+        return data;
+      } catch (error) {
+        if (photoPath) await removeMemberPhoto(photoPath);
+        throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: getMembersQueryKey() });
@@ -457,9 +479,25 @@ export function useCreateMember() {
 export function useUpdateMember() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: MemberInput }) => {
-      const { error } = await supabase.from('members').update({ name: data.name, email: data.email ?? null, phone: data.phone ?? null, address: data.address ?? null }).eq('id', id);
-      if (error) throw error;
+    mutationFn: async ({ id, data: input }: { id: number; data: MemberInput }) => {
+      let photoPath: string | undefined;
+      try {
+        if (input.photoFile) photoPath = await uploadMemberPhoto(input.photoFile);
+        const update: Record<string, unknown> = {
+          name: input.name,
+          student_id: input.studentId?.trim() || null,
+          class_name: input.className?.trim() || null,
+          email: input.email ?? null,
+          phone: input.phone ?? null,
+          address: input.address ?? null,
+        };
+        if (photoPath) update.photo_path = photoPath;
+        const { error } = await supabase.from('members').update(update).eq('id', id);
+        if (error) throw error;
+      } catch (error) {
+        if (photoPath) await removeMemberPhoto(photoPath);
+        throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: getMembersQueryKey() });
@@ -490,10 +528,13 @@ export function useListBorrowings() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('borrowings')
-        .select('*, members(name, member_number), books(title, isbn)')
+        .select('*, members(name, member_number, photo_path), books(title, isbn)')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []).map(mapBorrowing) as Borrowing[];
+      const photoUrls = await createMemberPhotoUrls(
+        (data ?? []).map((row: any) => row.members?.photo_path),
+      );
+      return (data ?? []).map((row: any) => mapBorrowing(row, photoUrls)) as Borrowing[];
     },
   });
 }
@@ -525,16 +566,25 @@ export function useCreateBorrowing() {
 export function useApproveBorrowRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ borrowingId, dueDate }: { borrowingId: number; dueDate: string }) => {
-      const { data, error } = await supabase.rpc('admin_approve_borrow_request', {
-        p_borrowing_id: borrowingId,
-        p_due_date: dueDate,
-      });
-      if (error) throw error;
-      return data;
+    mutationFn: async ({ borrowingId, dueDate, photoFile }: { borrowingId: number; dueDate: string; photoFile?: File }) => {
+      let photoPath: string | undefined;
+      try {
+        if (photoFile) photoPath = await uploadMemberPhoto(photoFile);
+        const { data, error } = await supabase.rpc('admin_approve_borrow_request', {
+          p_borrowing_id: borrowingId,
+          p_due_date: dueDate,
+          p_member_photo_path: photoPath ?? null,
+        });
+        if (error) throw error;
+        return data;
+      } catch (error) {
+        if (photoPath) await removeMemberPhoto(photoPath);
+        throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: getBorrowingsQueryKey() });
+      qc.invalidateQueries({ queryKey: getMembersQueryKey() });
       qc.invalidateQueries({ queryKey: getBooksQueryKey() });
       qc.invalidateQueries({ queryKey: getDashboardStatsQueryKey() });
       qc.invalidateQueries({ queryKey: getRecentActivitiesQueryKey() });

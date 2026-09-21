@@ -80,9 +80,12 @@ export interface Member {
   id: number;
   memberNumber: string;
   name: string;
+  studentId?: string | null;
+  className?: string | null;
   email?: string | null;
   phone?: string | null;
   address?: string | null;
+  photoUrl?: string | null;
   borrowCount?: number;
   fine?: number;
   createdAt?: string;
@@ -90,9 +93,12 @@ export interface Member {
 
 export interface MemberInput {
   name: string;
+  studentId?: string;
+  className?: string;
   email?: string;
   phone?: string;
   address?: string;
+  photoFile?: File;
 }
 
 export interface Borrowing {
@@ -101,6 +107,7 @@ export interface Borrowing {
   bookId: number;
   memberName: string;
   memberNumber: string;
+  memberPhotoUrl?: string | null;
   requesterName?: string | null;
   requesterClass?: string | null;
   requesterStudentId?: string | null;

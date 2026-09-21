@@ -90,9 +90,12 @@ export interface MemberRow {
   id: number;
   member_number: string;
   name: string;
+  student_id: string | null;
+  class_name: string | null;
   email: string | null;
   phone: string | null;
   address: string | null;
+  photo_path: string | null;
   created_at: string;
 }
 export type MemberInsert = Omit<MemberRow, 'id' | 'created_at' | 'member_number'> & { member_number?: string };

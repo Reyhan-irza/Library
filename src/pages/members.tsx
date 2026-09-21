@@ -15,17 +15,25 @@ import { EmptyState } from "@/components/ui/empty-state";
 
 function MemberForm({ initial, onSubmit, loading }: { initial?: Partial<MemberInput>; onSubmit: (d: MemberInput) => void; loading: boolean }) {
   const [form, setForm] = useState<MemberInput>({
-    name: initial?.name ?? "", email: initial?.email ?? "",
-    phone: initial?.phone ?? "", address: initial?.address ?? "",
+    name: initial?.name ?? "",
+    studentId: initial?.studentId ?? "",
+    className: initial?.className ?? "",
+    email: initial?.email ?? "",
+    phone: initial?.phone ?? "",
+    address: initial?.address ?? "",
   });
-  const fields: { key: keyof MemberInput; label: string; required?: boolean; type?: string }[] = [
+  const [photoFile, setPhotoFile] = useState<File | undefined>();
+  const isEditing = Boolean(initial);
+  const fields: { key: "name" | "studentId" | "className" | "email" | "phone" | "address"; label: string; required?: boolean; type?: string }[] = [
     { key: "name", label: "Nama Lengkap", required: true },
+    { key: "studentId", label: "NIS/NISN" },
+    { key: "className", label: "Kelas" },
     { key: "email", label: "Email", type: "email" },
     { key: "phone", label: "Nomor HP" },
     { key: "address", label: "Alamat" },
   ];
   return (
-    <form onSubmit={e => { e.preventDefault(); onSubmit(form); }} className="space-y-3">
+    <form onSubmit={e => { e.preventDefault(); onSubmit({ ...form, photoFile }); }} className="space-y-3">
       {fields.map(f => (
         <div key={f.key}>
           <label className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">{f.label}{f.required ? " *" : ""}</label>
@@ -34,6 +42,19 @@ function MemberForm({ initial, onSubmit, loading }: { initial?: Partial<MemberIn
             className="mt-1 w-full h-10 px-3 rounded-xl border border-border bg-background/60 text-sm focus:outline-none focus:border-primary transition-colors" />
         </div>
       ))}
+      <label className="block">
+        <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">
+          Foto siswa {!isEditing && " *"}
+        </span>
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          required={!isEditing}
+          onChange={e => setPhotoFile(e.target.files?.[0])}
+          className="mt-1 block w-full cursor-pointer rounded-xl border border-border bg-background/60 px-3 py-2 text-xs text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-2.5 file:py-1.5 file:text-xs file:font-semibold file:text-primary"
+        />
+        <p className="mt-1 text-[10px] text-muted-foreground">JPG, PNG, atau WEBP · maksimal 5 MB{isEditing ? " · kosongkan jika tidak mengganti" : ""}</p>
+      </label>
       <button type="submit" disabled={loading}
         className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition-all">
         {loading ? <><Loader2 size={15} className="animate-spin" /> Menyimpan…</> : "Simpan"}
@@ -83,13 +104,19 @@ function MemberDetail({ member, borrowings, loading }: { member: Member; borrowi
   return (
     <div className="space-y-5">
       <div className="flex items-start gap-3 rounded-2xl border border-primary/15 bg-primary/5 p-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/15">
-          <span className="text-lg font-extrabold text-primary">{member.name.charAt(0).toUpperCase()}</span>
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/15">
+          {member.photoUrl ? (
+            <img src={member.photoUrl} alt={`Foto ${member.name}`} className="h-full w-full object-cover" />
+          ) : (
+            <span className="text-lg font-extrabold text-primary">{member.name.charAt(0).toUpperCase()}</span>
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-base font-bold text-foreground">{member.name}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">{member.memberNumber}</p>
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+            {member.studentId && <span>NIS/NISN: {member.studentId}</span>}
+            {member.className && <span>{member.className}</span>}
             {member.email && <span>{member.email}</span>}
             {member.phone && <span>{member.phone}</span>}
           </div>
@@ -184,7 +211,12 @@ export default function MembersPage() {
 
   const filtered = members.filter(m => {
     const q = search.toLowerCase();
-    const matchSearch = !q || m.name.toLowerCase().includes(q) || m.memberNumber.toLowerCase().includes(q) || (m.email ?? "").toLowerCase().includes(q);
+     const matchSearch = !q
+       || m.name.toLowerCase().includes(q)
+       || m.memberNumber.toLowerCase().includes(q)
+       || (m.studentId ?? "").toLowerCase().includes(q)
+       || (m.className ?? "").toLowerCase().includes(q)
+       || (m.email ?? "").toLowerCase().includes(q);
     const matchFilter = filter === "loans"
       ? (m.borrowCount ?? 0) > 0
       : filter === "fines"
@@ -273,13 +305,21 @@ export default function MembersPage() {
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04, type: "spring", stiffness: 280, damping: 26 }}
               className="glass rounded-2xl p-4 shadow-card card-lift flex items-center gap-4">
-              <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-bold text-primary">{m.name.charAt(0).toUpperCase()}</span>
+               <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/10">
+                 {m.photoUrl ? (
+                   <img src={m.photoUrl} alt={`Foto ${m.name}`} className="h-full w-full object-cover" />
+                 ) : (
+                   <span className="text-sm font-bold text-primary">{m.name.charAt(0).toUpperCase()}</span>
+                 )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground">{m.name}</p>
-                <p className="text-xs text-muted-foreground">{m.memberNumber}{m.email ? ` · ${m.email}` : ""}</p>
+                 <p className="text-xs text-muted-foreground">
+                   {m.studentId ? `NIS/NISN: ${m.studentId}` : m.memberNumber}
+                   {m.className ? ` · ${m.className}` : ""}
+                 </p>
                 <div className="flex flex-wrap gap-3 mt-1 text-[10px] text-muted-foreground">
+                   {m.email && <span>{m.email}</span>}
                   {m.phone && <span>{m.phone}</span>}
                   {(m.borrowCount ?? 0) > 0 && <span className="text-amber-500 font-medium">{m.borrowCount} pinjaman aktif</span>}
                   {(m.fine ?? 0) > 0 && <span className="text-rose-500 font-medium">Denda: {formatCurrency(m.fine!)}</span>}
@@ -332,7 +372,14 @@ export default function MembersPage() {
       <AppModal open={!!editMember} onClose={() => setEditMember(null)} title="Edit Anggota">
         {editMember && (
           <MemberForm
-            initial={{ name: editMember.name, email: editMember.email ?? "", phone: editMember.phone ?? "", address: editMember.address ?? "" }}
+            initial={{
+              name: editMember.name,
+              studentId: editMember.studentId ?? "",
+              className: editMember.className ?? "",
+              email: editMember.email ?? "",
+              phone: editMember.phone ?? "",
+              address: editMember.address ?? "",
+            }}
             onSubmit={handleUpdate}
             loading={updateMember.isPending}
           />
