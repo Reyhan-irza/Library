@@ -178,7 +178,7 @@ export function LandingMobileMenu({
           aria-modal="true"
           aria-labelledby="vireon-mobile-menu-title"
           transition={reduced ? undefined : { duration: 0.62, ease: MENU_EASE }}
-          className="fixed inset-x-0 bottom-0 top-[60px] z-40 overflow-y-auto overscroll-contain border-t border-[#54d8b2]/20 bg-[#092b28]/[0.985] text-[#f5f4ec] shadow-[0_24px_80px_rgba(1,14,12,0.58)] backdrop-blur-2xl md:hidden"
+          className="fixed inset-x-0 bottom-0 top-[60px] z-40 overflow-y-auto overscroll-contain border-t border-[#54d8b2]/20 bg-[#092b28] text-[#f5f4ec] shadow-[0_24px_80px_rgba(1,14,12,0.58)] md:hidden"
         >
           <div
             className="pointer-events-none absolute inset-0 opacity-[0.09]"
@@ -190,11 +190,11 @@ export function LandingMobileMenu({
             aria-hidden="true"
           />
           <div
-            className="pointer-events-none absolute -right-32 -top-20 h-[390px] w-[390px] rounded-full bg-[#43d0aa]/[0.13] blur-3xl"
+             className="pointer-events-none absolute -right-32 -top-20 h-[390px] w-[390px] rounded-full border border-[#43d0aa]/[0.12]"
             aria-hidden="true"
           />
           <div
-            className="pointer-events-none absolute -bottom-36 -left-28 h-[360px] w-[360px] rounded-full bg-[#0f7160]/20 blur-3xl"
+             className="pointer-events-none absolute -bottom-36 -left-28 h-[360px] w-[360px] rounded-full border border-[#0f7160]/[0.18]"
             aria-hidden="true"
           />
 
@@ -274,7 +274,7 @@ export function LandingMobileMenu({
                           </span>
                         </span>
                         <span
-                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ${
+                           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md border transition-all duration-300 ${
                             isActive
                               ? "border-[#54d8b2]/40 bg-[#54d8b2]/10 text-[#54d8b2]"
                               : "border-white/10 text-white/25 group-hover:border-white/30 group-hover:text-white/75"
@@ -306,7 +306,7 @@ export function LandingMobileMenu({
                 href="/catalog"
                 onClick={onClose}
                 data-testid="link-mobile-menu-catalog"
-                className="flex min-h-[54px] items-center justify-between rounded-2xl border border-[#54d8b2]/30 bg-[#54d8b2]/10 px-4 text-left text-[#d9fff2] transition-colors hover:border-[#54d8b2]/60 hover:bg-[#54d8b2]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#54d8b2]"
+                 className="flex min-h-[54px] items-center justify-between border border-[#54d8b2]/30 bg-[#54d8b2]/10 px-4 text-left text-[#d9fff2] transition-colors hover:border-[#54d8b2]/60 hover:bg-[#54d8b2]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#54d8b2]"
               >
                 <span className="flex items-center gap-3">
                   <BookOpen className="h-4 w-4 text-[#54d8b2]" aria-hidden="true" />
@@ -322,7 +322,7 @@ export function LandingMobileMenu({
                 href="/request-status"
                 onClick={onClose}
                 data-testid="link-mobile-menu-request-status"
-                className="flex min-h-[54px] items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-left text-white/75 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#54d8b2]"
+                 className="flex min-h-[54px] items-center justify-between border border-white/10 bg-white/[0.04] px-4 text-left text-white/75 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#54d8b2]"
               >
                 <span className="flex items-center gap-3">
                   <ClipboardCheck className="h-4 w-4 text-white/55" aria-hidden="true" />
@@ -353,7 +353,7 @@ export function LandingMobileMenu({
                 href="/login"
                 onClick={onClose}
                 data-testid="link-mobile-menu-primary"
-                className="flex min-h-[58px] w-full items-center justify-between rounded-2xl bg-[#54d8b2] px-5 text-left text-[#062b27] shadow-[0_12px_32px_rgba(14,113,93,0.3)] transition-[transform,background-color] duration-300 hover:-translate-y-0.5 hover:bg-[#64e7c1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b4f7df] focus-visible:ring-offset-2 focus-visible:ring-offset-[#092b28]"
+                 className="flex min-h-[58px] w-full items-center justify-between rounded-md bg-[#54d8b2] px-5 text-left text-[#062b27] transition-[background-color] duration-300 hover:bg-[#64e7c1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b4f7df] focus-visible:ring-offset-2 focus-visible:ring-offset-[#092b28]"
               >
                 <span>
                   <span className="block font-heading text-[14px] font-bold">Mulai Sekarang</span>
@@ -368,7 +368,7 @@ export function LandingMobileMenu({
                 href="/login"
                 onClick={onClose}
                 data-testid="link-mobile-menu-login"
-                className="mt-3 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-5 text-[13px] font-semibold text-white/70 transition-colors hover:border-white/20 hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#54d8b2]"
+                 className="mt-3 flex min-h-[48px] w-full items-center justify-center gap-2 border border-white/10 bg-white/[0.04] px-5 text-[13px] font-semibold text-white/70 transition-colors hover:border-white/20 hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#54d8b2]"
               >
                 <LogIn className="h-4 w-4" aria-hidden="true" />
                 Sudah punya akun? Masuk

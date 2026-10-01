@@ -290,6 +290,11 @@ export function useDeleteBook() {
   return useMutation({
     mutationFn: async (id: number) => {
       const { error } = await supabase.from('books').delete().eq('id', id);
+      if (error?.code === '23503' && error.message.includes('borrowings_book_id_fkey')) {
+        throw new Error(
+          'Buku tidak dapat dihapus karena tercatat dalam riwayat peminjaman. Riwayat transaksi tetap disimpan.',
+        );
+      }
       if (error) throw error;
     },
     onSuccess: () => {

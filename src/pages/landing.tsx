@@ -20,8 +20,6 @@ import {
   BarChart3,
   Search,
   ShieldCheck,
-  Zap,
-  Layers,
   RefreshCw,
   ChevronRight,
   CheckCircle2,
@@ -34,12 +32,10 @@ import {
   MessageCircle,
   Github,
   BookMarked,
-  Clock,
   Sparkles,
 } from "lucide-react";
 import VIREON_LOGO, { VIREON_WORDMARK } from "@/assets/logo";
-import { useLandingStats } from "@/hooks/api";
-import { CustomCursor } from "@/components/custom-cursor";
+import { useLandingStats, usePublicCatalog } from "@/hooks/api";
 import "@/components/landing-marquee.css";
 import {
   LandingMobileMenu,
@@ -47,7 +43,11 @@ import {
 } from "@/components/landing-mobile-menu";
 import {
   useGsapAmbientScroll,
+  useGsapHeroChoreography,
+  useGsapLandingScroll,
   useGsapMagnetic,
+  useGsapNavChoreography,
+  useGsapProductReveal,
 } from "@/hooks/use-gsap-motion";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ function fadeBlurUp(delay = 0, reduced = false) {
 function fadeUpView(delay = 0, reduced = false) {
   if (reduced) return {};
   return {
-    initial: { opacity: 0, y: 24 },
+    initial: false,
     whileInView: { opacity: 1, y: 0 },
     viewport: { once: true, margin: "-56px" },
     transition: { duration: 0.58, delay, ease: E_OUT },
@@ -109,7 +109,7 @@ function fadeUpView(delay = 0, reduced = false) {
 function fadeLeftView(delay = 0, reduced = false) {
   if (reduced) return {};
   return {
-    initial: { opacity: 0, x: -48, rotate: -1 },
+    initial: false,
     whileInView: { opacity: 1, x: 0, rotate: 0 },
     viewport: { once: true, margin: "-56px" },
     transition: { duration: 0.65, delay, ease: E_OUT },
@@ -120,7 +120,7 @@ function fadeLeftView(delay = 0, reduced = false) {
 function fadeRightView(delay = 0, reduced = false) {
   if (reduced) return {};
   return {
-    initial: { opacity: 0, x: 48, rotate: 1 },
+    initial: false,
     whileInView: { opacity: 1, x: 0, rotate: 0 },
     viewport: { once: true, margin: "-56px" },
     transition: { duration: 0.65, delay, ease: E_OUT },
@@ -131,7 +131,7 @@ function fadeRightView(delay = 0, reduced = false) {
 function scaleView(delay = 0, reduced = false) {
   if (reduced) return {};
   return {
-    initial: { opacity: 0, scale: 0.88 },
+    initial: false,
     whileInView: { opacity: 1, scale: 1 },
     viewport: { once: true, margin: "-56px" },
     transition: { duration: 0.6, delay, ease: E_CIRC },
@@ -216,33 +216,33 @@ function useCardTilt(intensity = 6, reduced = false) {
 
 const FEATURES = [
   {
-    icon: BookOpen, num: "01", title: "Manajemen Koleksi",
-    desc: "Tambah, edit, dan lacak seluruh koleksi buku dengan mudah. Lengkap dengan kategori, rak, ISBN, dan informasi pengarang.",
+    icon: BookOpen, num: "01", title: "Koleksi",
+    desc: "Tambah dan sunting data buku, kategori, rak, ISBN, serta pengarang dari satu daftar katalog.",
     span: "lg:col-span-2", accent: true,
   },
   {
-    icon: Users, num: "02", title: "Data Anggota",
-    desc: "Kelola data anggota dalam satu tempat. Pantau riwayat peminjaman dan status setiap pembaca dengan cepat.",
+    icon: Users, num: "02", title: "Anggota",
+    desc: "Simpan data anggota dan buka riwayat peminjamannya saat diperlukan.",
     span: "lg:col-span-1", accent: false,
   },
   {
-    icon: ArrowLeftRight, num: "03", title: "Peminjaman & Pengembalian",
-    desc: "Catat peminjaman dan pengembalian tanpa ribet. Status dan pengingat tetap jelas untuk semua orang.",
+    icon: ArrowLeftRight, num: "03", title: "Peminjaman & pengembalian",
+    desc: "Catat transaksi dan ubah statusnya sampai buku kembali ke inventaris.",
     span: "lg:col-span-1", accent: false,
   },
   {
-    icon: BarChart3, num: "04", title: "Laporan & Statistik",
-    desc: "Lihat apa yang sedang ramai, cek tren peminjaman, dan temukan insight tanpa harus bongkar data satu-satu.",
+    icon: BarChart3, num: "04", title: "Laporan",
+    desc: "Tinjau ringkasan transaksi dan kondisi koleksi dari data yang tersimpan.",
     span: "lg:col-span-2", accent: false,
   },
   {
-    icon: Search, num: "05", title: "Pencarian Cepat",
-    desc: "Temukan buku, anggota, atau transaksi dalam hitungan detik dengan sistem pencarian yang responsif dan akurat.",
+    icon: Search, num: "05", title: "Pencarian",
+    desc: "Cari buku dan anggota dari katalog tanpa berpindah ke ruang kerja lain.",
     span: "lg:col-span-1", accent: false,
   },
   {
-    icon: ShieldCheck, num: "06", title: "Keamanan Terjamin",
-    desc: "Data tetap aman dengan akses berbasis peran dan perlindungan berlapis, jadi semua orang bisa fokus ke hal yang penting.",
+    icon: ShieldCheck, num: "06", title: "Akses",
+    desc: "Masuk ke ruang kerja sesuai akun yang telah dibuat untuk mengelola perpustakaan.",
     span: "lg:col-span-1", accent: false,
   },
 ] as const;
@@ -250,23 +250,21 @@ const FEATURES = [
 const HOW_STEPS = [
   {
     icon: Database, num: "01", title: "Daftarkan Koleksi",
-    desc: "Input buku, kategori, dan rak dengan form yang intuitif. ISBN dan data pengarang tersimpan secara terstruktur.",
+    desc: "Metadata buku masuk ke katalog: judul, pengarang, ISBN, kategori, dan rak.",
   },
   {
     icon: ArrowLeftRight, num: "02", title: "Catat Transaksi",
-    desc: "Proses peminjaman dan pengembalian dalam hitungan detik. Denda terlambat terhitung secara otomatis.",
+    desc: "Peminjaman dicatat bersama anggota dan buku yang dipilih, lalu statusnya dapat ditinjau.",
   },
   {
     icon: TrendingUp, num: "03", title: "Pantau & Evaluasi",
-    desc: "Lihat laporan lengkap dan grafik statistik untuk mengambil keputusan berbasis data yang akurat.",
+    desc: "Saat pengembalian selesai, riwayat transaksi dan ketersediaan koleksi ikut diperbarui.",
   },
 ] as const;
 
 const MARQUEE_ITEMS = [
-  "Manajemen Koleksi", "Peminjaman Otomatis", "Laporan Real-time",
-  "Pencarian Instan", "Kontrol Akses", "Sinkronisasi Data",
-  "Manajemen Anggota", "Statistik Bulanan", "Enkripsi Data",
-  "Antarmuka Intuitif", "Denda Otomatis",
+  "Koleksi", "Anggota", "Peminjaman", "Pengembalian",
+  "Inventaris", "Pencarian", "Laporan",
 ];
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -281,11 +279,13 @@ function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const mobileToggleRef = useRef<HTMLButtonElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
   const { scrollYProgress } = useScroll();
   const { direction } = useScrollIntent(72);
   const navVisible = !scrolled || direction === "up" || mobileOpen;
-  const navOnDark = mobileOpen || !scrolled;
+  const navOnDark = mobileOpen;
+  useGsapNavChoreography(headerRef);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 16);
@@ -312,33 +312,33 @@ function LandingNav() {
     window.setTimeout(() => scrollTo(id), 80);
   }, []);
 
-  const navItem = scrolled
-    ? "text-[13.5px] font-medium text-slate-500 hover:text-slate-900 px-3.5 py-2 rounded-lg hover:bg-slate-50 transition-colors duration-150"
-    : "text-[13.5px] font-medium text-white/75 hover:text-white px-3.5 py-2 rounded-lg hover:bg-white/10 transition-colors duration-150";
+  const navItem = "text-[13.5px] font-medium text-[#53655e] hover:text-[#24352f] px-3.5 py-2 transition-colors duration-150";
 
   return (
     <>
+      <motion.div
+        className="fixed inset-x-0 top-0 z-[60] h-[2px] origin-left bg-[hsl(163_45%_42%)]"
+        style={{ scaleX: scrollYProgress }}
+        aria-hidden="true"
+      />
       <motion.header
+        ref={headerRef}
         initial={reduced ? {} : { y: -20, opacity: 0 }}
         animate={{ y: navVisible ? 0 : -72, opacity: navVisible ? 1 : 0 }}
         transition={{ duration: reduced ? 0 : 0.36, delay: 0.05, ease: E_OUT }}
-        className={`fixed top-0 inset-x-0 z-50 transition-[background-color,border-color,box-shadow] duration-300 ${
+        className={`landing-nav fixed top-0 inset-x-0 z-50 ${
           !navVisible ? "pointer-events-none" : ""
-        } ${
-          mobileOpen
+          } ${
+           mobileOpen
             ? "bg-[#071f1d]/95 backdrop-blur-xl border-b border-white/10 shadow-[0_12px_40px_rgba(1,14,12,0.28)]"
             : scrolled
-            ? "bg-white/[0.97] backdrop-blur-xl border-b border-slate-200/70 shadow-[0_1px_0_0_rgba(0,0,0,0.04),0_4px_16px_-2px_rgba(0,0,0,0.04)]"
+             ? "border-b border-[#27453b]/15 bg-[#f5f3ed]/95 shadow-[0_1px_0_0_rgba(0,0,0,0.03),0_4px_16px_-2px_rgba(0,0,0,0.04)]"
             : "bg-transparent"
-        }`}
+         }`}
+        data-scrolled={scrolled}
       >
-        <motion.div
-          className={`absolute inset-x-0 bottom-0 h-[2px] origin-left ${reduced ? "hidden" : ""}`}
-          style={{ scaleX: scrollYProgress, background: "hsl(163 45% 42%)" }}
-          aria-hidden="true"
-        />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[60px] flex items-center justify-between">
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div data-gsap-nav-brand className="flex items-center gap-2.5 shrink-0">
             <div className="w-8 h-8 shrink-0">
               <img src={VIREON_LOGO} alt="VIREON" className="w-full h-full object-contain" loading="eager" decoding="sync" />
             </div>
@@ -352,14 +352,14 @@ function LandingNav() {
             </div>
           </div>
 
-          <nav className="hidden md:flex items-center gap-0.5" aria-label="Navigasi utama">
+          <nav data-gsap-nav-links className="hidden md:flex items-center gap-0.5" aria-label="Navigasi utama">
             {[{ label: "Cara Kerja", id: "how" }, { label: "Fitur", id: "features" }, { label: "Tentang", id: "about" }].map(({ label, id }) => (
               <button key={id} onClick={() => handleScroll(id)} className={navItem}>{label}</button>
             ))}
             <Link href="/catalog" className={navItem}>Katalog</Link>
           </nav>
 
-          <div className="hidden md:flex items-center gap-2">
+          <div data-gsap-nav-actions className="hidden md:flex items-center gap-2">
             <Link href="/catalog" className={navItem}>Jelajahi Koleksi</Link>
             <Link href="/login" className={navItem}>Masuk</Link>
             <Link
@@ -472,8 +472,8 @@ function ScrollUpDock() {
 function LibraryIllustration({ reduced }: { reduced: boolean }) {
   const featureChips = [
     { icon: BookOpen, label: "Koleksi tertata", className: "left-0 top-16 sm:left-2 sm:top-20" },
-    { icon: ArrowLeftRight, label: "Peminjaman otomatis", className: "right-0 top-8 sm:right-2 sm:top-12" },
-    { icon: BarChart3, label: "Laporan real-time", className: "right-2 bottom-20 sm:right-5 sm:bottom-24" },
+    { icon: ArrowLeftRight, label: "Peminjaman tercatat", className: "right-0 top-8 sm:right-2 sm:top-12" },
+    { icon: BarChart3, label: "Laporan terukur", className: "right-2 bottom-20 sm:right-5 sm:bottom-24" },
   ];
 
   return (
@@ -656,7 +656,7 @@ function HeroSection() {
 
             {/* Headline — word-by-word blur-reveal */}
             <h1
-              className="text-[2.75rem] sm:text-5xl lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold text-white leading-[1.1] tracking-[-0.03em]"
+              className="font-editorial text-[3.2rem] sm:text-6xl lg:text-[4.3rem] xl:text-[5rem] text-white leading-[0.94]"
               aria-label="Bikin perpustakaan terasa lebih hidup"
             >
               <span className="block">
@@ -687,12 +687,7 @@ function HeroSection() {
                 <motion.span
                   {...wordAnim(0.41)}
                   className="inline-block"
-                  style={{
-                    background: "linear-gradient(135deg, hsl(161 68% 58%) 0%, hsl(150 80% 70%) 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                  }}
+                   style={{ color: "hsl(161 68% 70%)" }}
                 >
                   Lebih Mudah
                 </motion.span>
@@ -742,7 +737,7 @@ function HeroSection() {
 
             {/* Trust signals — staggered slide from left */}
             <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2">
-              {["Tidak perlu instalasi", "Data aman & terenkripsi", "Pembaruan otomatis"].map((item, i) => (
+              {["Koleksi dan anggota", "Alur peminjaman", "Laporan perpustakaan"].map((item, i) => (
                 <motion.div
                   key={item}
                   initial={reduced ? {} : { opacity: 0, x: -20 }}
@@ -772,30 +767,6 @@ function HeroSection() {
               aria-hidden="true"
             />
 
-            {/* Top chip */}
-            <motion.div
-              initial={reduced ? {} : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.58, ease: E_OUT }}
-              className="absolute -top-4 right-6 z-10 flex items-center gap-2 bg-white border border-slate-200/80 rounded-full px-3 py-1.5 shadow-[0_6px_20px_rgba(0,0,0,0.14),0_1px_3px_rgba(0,0,0,0.08)]"
-              aria-hidden="true"
-            >
-              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "hsl(161 52% 44%)" }} />
-              <span className="text-[11.5px] font-semibold text-slate-700">Sistem Aktif</span>
-            </motion.div>
-
-            {/* Bottom chip */}
-            <motion.div
-              initial={reduced ? {} : { opacity: 0, y: -12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.68, ease: E_OUT }}
-              className="absolute -bottom-4 left-6 z-10 flex items-center gap-2 bg-white border border-slate-200/80 rounded-full px-3 py-1.5 shadow-[0_6px_20px_rgba(0,0,0,0.14),0_1px_3px_rgba(0,0,0,0.08)]"
-              aria-hidden="true"
-            >
-              <Clock className="w-3 h-3" style={{ color: "hsl(161 52% 44%)" }} />
-              <span className="text-[11.5px] font-semibold text-slate-700">Diperbarui real-time</span>
-            </motion.div>
-
             {/* Subtle perpetual float */}
             <motion.div style={reduced ? {} : { y: previewY }}>
               <LibraryIllustration reduced={reduced ?? false} />
@@ -814,33 +785,136 @@ function HeroSection() {
   );
 }
 
+function LandingHeroEditorial() {
+  const heroRef = useRef<HTMLElement>(null);
+  const primaryCtaRef = useGsapMagnetic<HTMLDivElement>();
+  const { data: stats, isLoading: statsLoading } = useLandingStats();
+  useGsapHeroChoreography(heroRef);
+
+  return (
+    <section
+      ref={heroRef}
+      data-gsap="hero"
+      className="landing-hero relative flex min-h-[640px] items-center overflow-hidden pt-[60px] lg:min-h-[700px]"
+    >
+      <div data-gsap="hero-grid" className="landing-paper-grid pointer-events-none absolute inset-0 opacity-50" aria-hidden="true" />
+      <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20 lg:px-8 lg:py-24">
+        <div data-gsap="hero-copy" className="max-w-xl">
+          <p data-gsap="hero-kicker" className="landing-kicker mb-6">Sistem manajemen perpustakaan</p>
+          <h1 data-gsap="hero-title" className="landing-display max-w-[620px] text-[3rem] leading-[0.96] text-[#24352f] sm:text-[4.25rem] lg:text-[4.8rem]">
+            <span className="block overflow-hidden"><span data-gsap="hero-title-line">Kelola</span></span>
+            <span className="block overflow-hidden"><span data-gsap="hero-title-line">perpustakaan</span></span>
+            <span className="block overflow-hidden"><span data-gsap="hero-title-line">dengan lebih</span></span>
+            <span className="block overflow-hidden"><span data-gsap="hero-title-line">jelas.</span></span>
+          </h1>
+          <p data-gsap="hero-description" className="mt-7 max-w-[470px] text-[1.02rem] leading-[1.7] text-[#53645d] sm:text-[1.08rem]">
+             VIREON merapikan katalog, anggota, peminjaman, pengembalian, dan laporan dalam satu ruang kerja.
+          </p>
+          <div data-gsap="hero-actions" className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <div ref={primaryCtaRef} className="inline-flex will-change-transform">
+              <Link
+                href="/login"
+                data-testid="link-hero-login"
+                className="inline-flex min-h-[46px] items-center gap-2 bg-[#285b4c] px-5 py-3 text-[14px] font-semibold text-[#fbfaf6] transition-colors hover:bg-[#1f493d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#285b4c] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f5f3ed]"
+              >
+                Masuk ke Sistem
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <button
+              onClick={() => scrollTo("how")}
+              data-testid="button-hero-how"
+              className="landing-outline-link inline-flex min-h-[46px] items-center gap-2 border-b px-0 py-3 text-[14px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#285b4c] focus-visible:ring-offset-2"
+            >
+              Lihat Cara Kerja
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+          <div data-gsap="hero-proof" className="mt-10 grid max-w-[470px] grid-cols-1 gap-2 border-t border-[#27453b]/15 pt-5 text-[12px] text-[#68736d] sm:grid-cols-3 sm:gap-5">
+            {["Koleksi terpusat", "Transaksi tercatat", "Laporan terukur"].map((item) => (
+              <div key={item} className="flex items-start gap-2">
+                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#285b4c]" aria-hidden="true" />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div data-gsap="hero-visual" className="relative mx-auto w-full max-w-[620px]">
+          <div data-gsap-hero-tilt className="landing-hero-visual relative overflow-hidden p-5 sm:p-7">
+            <div data-gsap="hero-panel-head" className="relative z-10 flex items-center justify-between border-b border-[#27453b]/15 pb-4">
+              <div>
+                <p className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-[#285b4c]">VIREON / Library system</p>
+                <h2 className="mt-2 text-[19px] font-semibold tracking-[-0.03em] text-[#24352f] sm:text-[22px]">Ringkasan perpustakaan</h2>
+              </div>
+              <BookOpen className="h-5 w-5 text-[#285b4c]" strokeWidth={1.6} aria-hidden="true" />
+            </div>
+            <div data-gsap="hero-panel-body" className="relative z-10 mt-6 grid grid-cols-[1.2fr_0.8fr] gap-6">
+              <div className="space-y-4">
+                <div data-gsap="hero-status" className="border-l-2 border-[#285b4c] pl-4">
+                  <p className="text-[12px] text-[#68736d]">Total koleksi buku</p>
+                  <p className="mt-1 text-[30px] font-semibold tabular-nums tracking-[-0.06em] text-[#24352f]">
+                    {stats ? fmt(stats.totalBooks) : statsLoading ? "…" : "—"}
+                  </p>
+                  <p className="mt-1 text-[10px] text-[#68736d]">judul tercatat di VIREON</p>
+                </div>
+                <div className="space-y-3 border-t border-[#27453b]/15 pt-4">
+                  {[
+                    ["Koleksi", "Kelola buku dan kategori"],
+                    ["Anggota", "Pantau data pembaca"],
+                    ["Peminjaman", "Catat setiap transaksi"],
+                  ].map(([label, desc]) => (
+                    <div data-gsap="hero-row" key={label} className="flex items-center justify-between gap-3 border-b border-[#27453b]/10 pb-3 last:border-0 last:pb-0">
+                      <span className="text-[12px] font-semibold text-[#24352f]">{label}</span>
+                      <span className="text-right text-[10px] leading-4 text-[#68736d]">{desc}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="hidden border-l border-[#27453b]/15 pl-6 sm:block">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#68736d]">Alur kerja</p>
+                <div className="mt-5 space-y-5">
+                  {["Daftarkan koleksi", "Catat transaksi", "Pantau laporan"].map((label, index) => (
+                    <div data-gsap="hero-row" key={label} className="flex items-start gap-3">
+                      <span className="font-mono text-[10px] text-[#285b4c]">0{index + 1}</span>
+                      <span className="text-[12px] leading-4 text-[#24352f]">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div data-gsap="hero-panel-foot" className="relative z-10 mt-7 flex items-center justify-between border-t border-[#27453b]/15 pt-4">
+              <span className="text-[10px] text-[#68736d]">Satu ruang untuk seluruh aktivitas baca</span>
+               <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-[#285b4c]">WORKSPACE</span>
+            </div>
+          </div>
+          <div className="absolute -bottom-5 -left-5 hidden h-20 w-20 border-b border-l border-[#285b4c]/35 sm:block" aria-hidden="true" />
+          <div className="absolute -right-5 -top-5 hidden h-20 w-20 border-r border-t border-[#285b4c]/35 sm:block" aria-hidden="true" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Marquee Ticker ───────────────────────────────────────────────────────────
 // A content-width duplicated track loops seamlessly; hover pauses in place.
 
 function MarqueeTicker() {
   return (
     <div
-      className="vireon-marquee relative py-3.5 overflow-hidden border-y border-slate-200/60"
-      style={{ background: "hsl(161 52% 26%)" }}
-      aria-hidden="true"
+      className="vireon-marquee relative overflow-hidden border-y border-[#27453b]/20 py-3.5"
+      aria-label="Ruang lingkup VIREON"
     >
-      <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none" style={{ background: "linear-gradient(to right, hsl(161 52% 26%), transparent)" }} />
-      <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none" style={{ background: "linear-gradient(to left, hsl(161 52% 26%), transparent)" }} />
-      <span className="absolute left-4 top-1/2 z-20 hidden -translate-y-1/2 text-[8px] font-bold uppercase tracking-[0.2em] text-white/35 lg:block" aria-hidden="true">
-        Index 01
-      </span>
-
-      <div className="vireon-marquee-track flex w-max items-center whitespace-nowrap" data-testid="landing-marquee-track">
-        {[0, 1].map((copy) => (
-          <div key={copy} className="flex shrink-0 items-center">
-            {MARQUEE_ITEMS.map((item) => (
-              <div key={item} className="flex shrink-0 items-center gap-5 px-5">
-                <span className="text-[11.5px] font-semibold text-white/70 tracking-[0.06em] uppercase">{item}</span>
-                <div className="w-[3px] h-[3px] rounded-full shrink-0" style={{ background: "rgba(255,255,255,0.35)" }} />
-              </div>
-            ))}
-          </div>
-        ))}
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
+        <span className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-[#b8d0c4]">Lingkup sistem</span>
+        <div className="vireon-marquee-track flex min-w-0 flex-1 items-center justify-end gap-x-6 overflow-hidden" data-gsap-marquee data-testid="landing-marquee-track">
+          {MARQUEE_ITEMS.map((item) => (
+            <span key={item} className="shrink-0 text-[11px] font-medium text-[#e2eee7]/80">
+              {item}
+              <span className="ml-6 text-[#a5c8b6]/50" aria-hidden="true">/</span>
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -865,22 +939,15 @@ function AnimatedStatCard({
   const isZero = !isLoading && value === 0;
   const count = useCountUp(value ?? 0, isInView && !isLoading && hasValue, 1.2, reduced);
 
-  // Four distinctly different entrance styles
-  const entries = [
-    { initial: { x: -60, opacity: 0, rotate: -2, scale: 0.95 } },
-    { initial: { y: 60, opacity: 0, scale: 0.9 } },
-    { initial: { x: 60, opacity: 0, rotate: 2, scale: 0.95 } },
-    { initial: { y: -40, opacity: 0, scale: 0.88, rotate: 1 } },
-  ];
-
+  // Keep one restrained entrance pattern for every stat card.
   return (
     <motion.div
       ref={ref}
-      initial={reduced ? {} : entries[index % 4].initial}
+      initial={false}
       animate={isInView ? { x: 0, y: 0, opacity: 1, rotate: 0, scale: 1 } : {}}
       transition={{ duration: 0.72, delay: index * 0.1, ease: E_OUT }}
-      whileHover={reduced ? {} : { y: -3, transition: { duration: 0.2, ease: E_OUT } }}
-      className="group relative px-6 py-9 transition-colors duration-200 hover:bg-[hsl(161_52%_26%/0.018)] lg:px-8"
+      whileHover={reduced ? {} : { y: -1, transition: { duration: 0.2, ease: E_OUT } }}
+      className="group relative px-5 py-8 transition-colors duration-200 hover:bg-[#285b4c]/[0.025] lg:px-8"
       role="group"
       aria-label={`${label}: ${isLoading ? "memuat" : hasValue ? fmt(value) : "belum tersedia"}`}
       data-testid={`stat-landing-${index}`}
@@ -946,9 +1013,13 @@ function StatsSection() {
   ];
 
   return (
-    <section className="border-b border-slate-100" aria-label="Statistik perpustakaan">
+    <section className="landing-stats border-b border-slate-100" aria-label="Statistik perpustakaan">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-slate-100">
+        <div className="flex items-center justify-between border-b border-[#27453b]/10 py-4">
+          <p className="landing-section-label">Gambaran ruang baca</p>
+          <p className="hidden text-[11px] text-[#68736d] sm:block">Data yang tersedia di sistem saat ini</p>
+        </div>
+        <div className="landing-stat-grid grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 divide-slate-100">
           {items.map(({ label, value, icon }, i) => (
             <AnimatedStatCard
               key={label}
@@ -998,131 +1069,94 @@ function StatsSection() {
 function HowItWorksSection() {
   const reduced = useReducedMotion();
 
-  // Entry directions: step 0 from left, 1 from below, 2 from right
-  const stepEntries = [
-    { initial: { x: -52, opacity: 0, rotate: -1.5 }, transition: { duration: 0.68, delay: 0.14, ease: E_OUT } },
-    { initial: { y: 52, opacity: 0, scale: 0.94 },   transition: { duration: 0.68, delay: 0.28, ease: E_OUT } },
-    { initial: { x: 52, opacity: 0, rotate: 1.5 },   transition: { duration: 0.68, delay: 0.42, ease: E_OUT } },
-  ];
-
   return (
-    <section id="how" className="relative scroll-mt-20 py-24 sm:py-32 overflow-hidden" style={{ background: "#f8f9fa" }}>
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        <svg className="absolute inset-0 w-full h-full opacity-[0.022]">
-          <defs>
-            <pattern id="how-grid" x="0" y="0" width="48" height="48" patternUnits="userSpaceOnUse">
-              <path d="M 48 0 L 0 0 0 48" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-slate-900" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#how-grid)" />
-        </svg>
-        <div className="absolute top-0 right-0 w-[500px] h-[500px]" style={{ background: "radial-gradient(ellipse at 100% 0%, hsl(161 52% 30% / 0.06) 0%, transparent 60%)" }} />
-        <div className="absolute bottom-10 left-8 h-28 w-28 rounded-full border border-emerald-900/[0.08] sm:left-16" />
-        <div className="absolute bottom-16 left-14 h-16 w-16 rounded-full border border-emerald-900/[0.08] sm:left-20" />
-      </div>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="absolute right-4 top-2 hidden items-center gap-2 text-[9px] font-bold uppercase tracking-[0.24em] text-slate-400 lg:flex" aria-hidden="true">
-          <span className="h-px w-10 bg-emerald-900/20" />
-          01 — Flow
-        </div>
-        {/* Header with label reveal */}
-        <motion.div {...fadeUpView(0, reduced ?? false)} className="max-w-xl mb-16">
-          <motion.p
-            initial={reduced ? {} : { clipPath: "inset(0 100% 0 0)", opacity: 0 }}
-            whileInView={{ clipPath: "inset(0 0% 0 0)", opacity: 1 }}
-            viewport={{ once: true, margin: "-56px" }}
-            transition={{ duration: 0.6, ease: E_OUT }}
-            className="text-[11.5px] font-bold uppercase tracking-[0.1em] mb-3"
-            style={{ color: "hsl(161 52% 32%)" }}
-          >
-            Cara Kerja
-          </motion.p>
-          <h2 className="text-[2rem] sm:text-[2.5rem] font-extrabold text-slate-900 tracking-[-0.025em] leading-[1.1]">
-            Mulai Digunakan dalam
-            <br />
-            Tiga Langkah
-          </h2>
-          <p className="mt-4 text-[15px] text-slate-500 leading-relaxed">
-            Tidak perlu jadi ahli teknologi. VIREON terasa jelas sejak pertama
-            dibuka, baik untuk tim perpustakaan maupun pembaca.
-          </p>
-        </motion.div>
-
-        {/* Steps */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 relative">
-          {/* Connector: line draws in left → right */}
-          <motion.div
-            initial={reduced ? {} : { scaleX: 0, opacity: 0 }}
-            whileInView={{ scaleX: 1, opacity: 1 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 1.4, delay: 0.5, ease: E_OUT }}
-            style={{ transformOrigin: "left center" }}
-            className="hidden md:block absolute top-[26px] left-[calc(33.33%_-_12px)] right-[calc(33.33%_-_12px)] h-[1px]"
-            aria-hidden="true"
-          >
-            <div
-              className="w-full h-full"
-              style={{ background: "linear-gradient(to right, transparent, hsl(161 52% 36% / 0.35) 25%, hsl(161 52% 36% / 0.35) 75%, transparent)" }}
-            />
+    <section
+      id="how"
+      data-gsap-section
+      data-gsap-pinned-workflow
+      className="landing-workflow-section relative scroll-mt-20 overflow-hidden border-y border-[#27453b]/12 bg-[#eef1eb] py-20 sm:py-28"
+    >
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid items-center gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
+          <motion.div {...fadeUpView(0, reduced ?? false)} className="max-w-md">
+            <p className="landing-section-label mb-4">Alur kerja</p>
+            <h2 data-gsap-reveal className="text-[2rem] font-semibold leading-[1.05] tracking-[-0.055em] text-[#24352f] sm:text-[2.75rem]">
+              Dari katalog sampai buku kembali.
+            </h2>
+            <p className="mt-5 text-[15px] leading-7 text-[#68736d]">
+              Setiap langkah meninggalkan catatan yang bisa dibaca kembali oleh tim perpustakaan.
+            </p>
+            <div className="mt-8 flex items-center gap-3 border-t border-[#27453b]/15 pt-4 text-[11px] text-[#68736d]">
+              <span className="h-2 w-2 rounded-full bg-[#285b4c]" aria-hidden="true" />
+              Alur katalog dan sirkulasi dalam satu sistem
+            </div>
           </motion.div>
 
-          {HOW_STEPS.map(({ icon: Icon, num, title, desc }, i) => (
-            <motion.div
-              key={title}
-              initial={reduced ? {} : stepEntries[i].initial}
-              whileInView={reduced ? {} : { x: 0, y: 0, opacity: 1, rotate: 0, scale: 1 }}
-              viewport={{ once: true, margin: "-60px" }}
-              transition={reduced ? {} : stepEntries[i].transition}
-              className="flex flex-col"
-            >
-              <div className="flex items-center gap-4 mb-5">
-                {/* Icon box with rotate-in */}
-                <motion.div
-                  initial={reduced ? {} : { rotateY: -90, opacity: 0 }}
-                  whileInView={reduced ? {} : { rotateY: 0, opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.55, delay: 0.5 + i * 0.14, ease: E_OUT }}
-                  className="w-[52px] h-[52px] rounded-2xl flex items-center justify-center shrink-0 relative"
-                  style={{
-                    background: "white",
-                    border: "1.5px solid hsl(161 52% 36% / 0.25)",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 0 0 4px hsl(161 52% 36% / 0.06)",
-                  }}
-                >
-                  <Icon className="w-5 h-5" strokeWidth={1.75} style={{ color: "hsl(161 52% 30%)" }} />
-                  <div
-                    className="absolute -top-2 -right-2 w-[18px] h-[18px] rounded-full flex items-center justify-center"
-                    style={{ background: "hsl(161 52% 26%)" }}
+          <div className="min-w-0">
+            <div data-gsap-workflow-viewport className="landing-workflow-viewport">
+              <div data-gsap-workflow-track className="landing-workflow-track">
+                {HOW_STEPS.map(({ icon: Icon, num, title, desc }, i) => (
+                  <article
+                    key={title}
+                    data-gsap-workflow-panel
+                    className="landing-workflow-panel relative flex min-w-0 flex-col justify-between border-y border-[#27453b]/15 bg-[#fbfaf6] p-5 sm:p-7 lg:p-9"
                   >
-                    <span className="text-[9px] font-bold text-white">{i + 1}</span>
-                  </div>
-                </motion.div>
-                <span
-                  className="text-[44px] font-black leading-none tracking-[-0.06em] select-none"
-                  style={{ color: "hsl(161 52% 26% / 0.1)" }}
-                  aria-hidden="true"
-                >
-                  {num}
-                </span>
-              </div>
-              <h3 className="text-[16px] font-bold text-slate-900 mb-2 tracking-tight">{title}</h3>
-              <p className="text-[14px] text-slate-500 leading-relaxed">{desc}</p>
-            </motion.div>
-          ))}
-        </div>
+                    <div className="flex items-center justify-between gap-4 border-b border-[#27453b]/12 pb-4">
+                      <span className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-[#68736d]">
+                        VIREON / PROCESS {num}
+                      </span>
+                      <span className="flex h-9 w-9 items-center justify-center border border-[#285b4c]/20 text-[#285b4c]">
+                        <Icon className="h-4 w-4" strokeWidth={1.6} aria-hidden="true" />
+                      </span>
+                    </div>
 
-        {/* CTA */}
-        <motion.div {...fadeUpView(0.36, reduced ?? false)} className="mt-16 flex justify-start">
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 text-[13.5px] font-semibold group"
-            style={{ color: "hsl(161 52% 26%)" }}
-          >
-            Mulai sekarang
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-150" />
-          </Link>
-        </motion.div>
+                    <div className="py-8">
+                      <p className="font-mono text-[11px] tracking-[0.16em] text-[#285b4c]">
+                        CHAPTER {num} / 03
+                      </p>
+                      <h3 className="mt-4 max-w-md text-[1.8rem] font-semibold leading-[1.02] tracking-[-0.055em] text-[#24352f] sm:text-[2.35rem]">
+                        {title}
+                      </h3>
+                      <p className="mt-4 max-w-md text-[14px] leading-6 text-[#68736d]">
+                        {desc}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#27453b]/15 pt-4 text-[11px]">
+                      {i === 0 && (
+                        <>
+                          <span className="font-semibold text-[#24352f]">Judul · pengarang · ISBN</span>
+                          <span className="text-[#68736d]">Data katalog</span>
+                        </>
+                      )}
+                      {i === 1 && (
+                        <>
+                          <span className="font-semibold text-[#24352f]">Anggota · tanggal · buku</span>
+                          <span className="border-l-2 border-[#b5d6bb] pl-2 text-[#68736d]">Transaksi</span>
+                        </>
+                      )}
+                      {i === 2 && (
+                        <>
+                          <span className="font-semibold text-[#24352f]">Status kembali · stok</span>
+                          <span className="border-l-2 border-[#285b4c] pl-2 text-[#285b4c]">Riwayat</span>
+                        </>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-center gap-4">
+              <div className="landing-workflow-progress-track relative h-px flex-1 bg-[#285b4c]/20">
+                <span data-gsap-workflow-progress className="landing-workflow-progress-fill absolute inset-0 origin-left bg-[#285b4c]" />
+              </div>
+              <span className="shrink-0 font-mono text-[9px] font-semibold uppercase tracking-[0.14em] text-[#68736d]">
+                Scroll untuk menelusuri
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -1138,40 +1172,24 @@ function FeatureCard({
   index: number;
   reduced: boolean;
 }) {
-  const tilt = useCardTilt(5, reduced);
   const Icon = feature.icon;
   const isWide = feature.span === "lg:col-span-2";
 
-  // Unique entry per card — no two the same
-  const entries = [
-    { initial: { x: -60, opacity: 0, rotate: -2 } },   // 0: left + tilt
-    { initial: { y: -50, opacity: 0, scale: 0.9 } },   // 1: top + scale
-    { initial: { x: 60, opacity: 0, rotate: 2 } },     // 2: right + tilt
-    { initial: { y: 60, opacity: 0, rotate: -1.5 } },  // 3: bottom + tilt
-    { initial: { x: -50, opacity: 0, scale: 0.92 } },  // 4: left + scale
-    { initial: { x: 50, opacity: 0, scale: 0.92 } },   // 5: right + scale
-  ];
-
-  const entry = entries[index % entries.length];
-
   return (
     <motion.div
-      initial={reduced ? {} : entry.initial}
+      initial={false}
       whileInView={reduced ? {} : { x: 0, y: 0, opacity: 1, rotate: 0, scale: 1 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={reduced ? {} : { duration: 0.68, delay: index * 0.07, ease: E_OUT }}
-      onMouseMove={tilt.onMouseMove}
-      onMouseLeave={tilt.onMouseLeave}
-      className={`group relative rounded-2xl p-6 border overflow-hidden cursor-default ${
+      className={`group relative rounded-[3px] p-6 border overflow-hidden cursor-default ${
         feature.accent
           ? "border-transparent"
           : "border-slate-200/70 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
-      } hover:shadow-[0_12px_36px_rgba(0,0,0,0.1)] hover:border-[hsl(161_52%_36%/0.3)] transition-all duration-300 ${feature.span}`}
+      } hover:shadow-[0_8px_24px_rgba(31,52,44,0.07)] hover:border-[hsl(161_52%_36%/0.3)] transition-[border-color,box-shadow] duration-200 ${feature.span}`}
       style={{
         ...(feature.accent
-          ? { background: "linear-gradient(140deg, hsl(161 52% 26% / 0.06) 0%, hsl(161 52% 26% / 0.02) 100%)", border: "1px solid hsl(161 52% 36% / 0.18)" }
+          ? { background: "hsl(161 52% 26% / 0.045)", border: "1px solid hsl(161 52% 36% / 0.18)" }
           : {}),
-        ...(reduced ? {} : { rotateX: tilt.rotateX, rotateY: tilt.rotateY }),
       }}
     >
       {/* Top accent line on hover */}
@@ -1192,7 +1210,7 @@ function FeatureCard({
 
       {/* Icon */}
       <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center mb-5 shrink-0"
+        className="w-10 h-10 rounded-sm flex items-center justify-center mb-5 shrink-0"
         style={{ background: "hsl(161 52% 26% / 0.09)", border: "1px solid hsl(161 52% 36% / 0.18)" }}
       >
         <Icon className="w-[18px] h-[18px]" strokeWidth={1.75} style={{ color: "hsl(161 52% 28%)" }} />
@@ -1213,48 +1231,137 @@ function FeatureCard({
   );
 }
 
+function PublicCatalogRows() {
+  const listRef = useRef<HTMLDivElement>(null);
+  const { data: books, isLoading, isError } = usePublicCatalog("", null, false);
+  const visibleBooks = books?.slice(0, 3) ?? [];
+  useGsapProductReveal(listRef, visibleBooks.length);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3 px-3 py-4" role="status" aria-live="polite">
+        <span className="sr-only">Memuat katalog publik</span>
+        {[0, 1, 2].map((item) => (
+          <div key={item} className="flex items-center gap-3" aria-hidden="true">
+            <span className="h-10 w-8 shrink-0 animate-pulse bg-white/10" />
+            <span className="h-3 w-2/3 animate-pulse bg-white/10" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (isError || visibleBooks.length === 0) {
+    return (
+      <p className="px-3 py-5 text-[11px] leading-5 text-white/65" role="status">
+        {isError ? "Katalog publik sementara tidak dapat dimuat." : "Belum ada buku yang ditampilkan di katalog publik."}
+        {" "}
+        <Link href="/catalog" className="font-semibold text-[#b5d6bb] underline underline-offset-2">
+          Buka katalog
+        </Link>
+      </p>
+    );
+  }
+
+  return (
+    <div ref={listRef}>
+      {visibleBooks.map((book) => (
+        <div
+          key={book.id}
+          data-gsap-product-row
+          className="grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 border-b border-white/10 px-3 py-3 last:border-b-0"
+        >
+          <span
+            data-gsap-product-cover
+            className="flex h-11 w-8 shrink-0 items-center justify-center overflow-hidden border border-white/15 bg-white/10 text-[#b5d6bb]"
+          >
+            {book.coverUrl ? (
+              <img
+                src={book.coverUrl}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <BookOpen className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+            )}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-[11px] font-semibold text-white/90" title={book.title}>
+              {book.title}
+            </span>
+            <span className="mt-1 block truncate text-[10px] text-white/55" title={book.author}>
+              {book.author}{book.categoryName ? ` · ${book.categoryName}` : ""}
+            </span>
+          </span>
+          <span className="text-right">
+            <span className="block font-mono text-[12px] font-semibold tabular-nums text-white/90">
+              {fmt(book.availableCopies)}
+            </span>
+            <span className="block text-[9px] text-white/50">eksemplar</span>
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function FeaturesSection() {
   const reduced = useReducedMotion();
 
   return (
-    <section id="features" className="relative scroll-mt-20 py-24 sm:py-32 bg-[#fbfaf6] overflow-hidden">
-      <div className="vireon-dot-field absolute -right-24 top-20 h-72 w-72 rounded-full opacity-30 pointer-events-none" aria-hidden="true" />
-      <div
-        className="absolute -top-24 left-1/2 -translate-x-1/2 w-[800px] h-[600px] pointer-events-none"
-        style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(161 52% 30% / 0.05) 0%, transparent 60%)" }}
-        aria-hidden="true"
-      />
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="absolute right-4 top-0 hidden text-[9px] font-bold uppercase tracking-[0.24em] text-slate-400 lg:block" aria-hidden="true">
-          02 — Modules
-        </div>
-        <motion.div {...fadeUpView(0, reduced ?? false)} className="max-w-xl mb-14">
-          <motion.p
-            initial={reduced ? {} : { clipPath: "inset(0 100% 0 0)", opacity: 0 }}
-            whileInView={{ clipPath: "inset(0 0% 0 0)", opacity: 1 }}
-            viewport={{ once: true, margin: "-56px" }}
-            transition={{ duration: 0.6, ease: E_OUT }}
-            className="text-[11.5px] font-bold uppercase tracking-[0.1em] mb-3"
-            style={{ color: "hsl(161 52% 32%)" }}
-          >
-            Fitur Lengkap
-          </motion.p>
-          <h2 className="text-[2rem] sm:text-[2.5rem] font-extrabold text-slate-900 tracking-[-0.025em] leading-[1.1]">
-            Semua yang Dibutuhkan
-            <br />
-            dalam Satu Ruang
-          </h2>
-          <p className="mt-4 text-[15px] text-slate-500 leading-relaxed">
-            Kelola perpustakaan jadi lebih mudah. Koleksi, peminjaman, anggota, sampai laporan, semuanya lebih rapi dalam satu sistem.
+    <section id="features" data-gsap-section className="relative scroll-mt-20 overflow-hidden bg-[#fbfaf6] py-20 sm:py-28">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-12 flex flex-col justify-between gap-5 border-b border-[#27453b]/15 pb-6 sm:flex-row sm:items-end">
+          <motion.div {...fadeUpView(0, reduced ?? false)} className="max-w-xl">
+            <p className="landing-section-label mb-4">Ruang kerja</p>
+            <h2 data-gsap-reveal className="text-[2rem] font-semibold leading-[1.08] tracking-[-0.055em] text-[#24352f] sm:text-[2.75rem]">
+              Modul yang mengikuti pekerjaan sehari-hari.
+            </h2>
+          </motion.div>
+          <p className="max-w-xs text-[14px] leading-6 text-[#68736d]">
+            Bukan kumpulan fitur terpisah. Ini adalah daftar kerja yang menyambung dari buku ke transaksi.
           </p>
-        </motion.div>
+        </div>
 
-        {/* Bento grid — each card has unique entrance + 3D hover tilt */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-          {FEATURES.map((feature, i) => (
-            <FeatureCard key={feature.title} feature={feature} index={i} reduced={reduced ?? false} />
-          ))}
+        <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
+          <motion.div {...fadeLeftView(0, reduced ?? false)} className="border border-[#27453b]/18 bg-[#173d34] p-5 text-[#eff7ef] sm:p-7">
+            <div className="flex items-start justify-between gap-6 border-b border-white/15 pb-5">
+              <div>
+                <p className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-[#b5d6bb]">01 / Koleksi</p>
+                <h3 className="mt-3 text-[22px] font-semibold tracking-[-0.04em] text-background">Katalog buku</h3>
+                <p className="mt-2 max-w-sm text-[13px] leading-5 text-white/60">
+                  Metadata yang dibutuhkan untuk menemukan dan mengelola setiap buku tetap terlihat dalam satu daftar.
+                </p>
+              </div>
+              <BookOpen className="mt-1 h-5 w-5 shrink-0 text-[#b5d6bb]" strokeWidth={1.5} aria-hidden="true" />
+            </div>
+            <div data-gsap-products className="mt-6 overflow-hidden border border-white/15">
+              <div className="grid grid-cols-[1.35fr_0.8fr_0.7fr] gap-3 border-b border-white/15 bg-white/[0.05] px-3 py-2 font-mono text-[9px] uppercase tracking-[0.1em] text-white/45">
+                <span className="col-span-2">Buku dalam katalog</span><span className="text-right">Tersedia</span>
+              </div>
+              <PublicCatalogRows />
+            </div>
+            <div className="mt-5 flex items-center gap-2 text-[11px] text-[#b5d6bb]">
+              <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+              Data katalog publik yang tersedia saat ini
+            </div>
+          </motion.div>
+
+          <motion.div {...fadeRightView(0.08, reduced ?? false)}>
+            <div className="divide-y divide-[#27453b]/15 border-y border-[#27453b]/15" data-gsap-depth="7" data-gsap-lateral="-2">
+              {FEATURES.slice(1).map(({ icon: Icon, title, desc }) => (
+                <div key={title} className="flex min-h-[102px] items-start gap-4 py-5">
+                  <Icon className="mt-1 h-4 w-4 shrink-0 text-[#285b4c]" strokeWidth={1.7} aria-hidden="true" />
+                  <div className="min-w-0">
+                    <h3 className="text-[15px] font-semibold tracking-[-0.02em] text-[#24352f]">{title}</h3>
+                    <p className="mt-1.5 max-w-md text-[13px] leading-5 text-[#68736d]">{desc}</p>
+                  </div>
+                  <ArrowRight className="ml-auto mt-1 hidden h-4 w-4 shrink-0 text-[#285b4c]/45 sm:block" aria-hidden="true" />
+                </div>
+              ))}
+            </div>
+          </motion.div>
         </div>
       </div>
     </section>
@@ -1267,113 +1374,61 @@ function FeaturesSection() {
 
 function AboutSection() {
   const reduced = useReducedMotion();
-  const sectionRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start end", "end start"],
-  });
-  // Background radial drifts leftward as you scroll
-  const bgX = useTransform(scrollYProgress, [0, 1], ["0%", "-12%"]);
-
-  const points = [
-    {
-      icon: Zap, title: "Dirancang untuk Kecepatan",
-      desc: "Alur kerja yang meminimalkan langkah. Dari input buku hingga cetak laporan — semua dalam hitungan detik.",
-    },
-    {
-      icon: Layers, title: "Terintegrasi Penuh",
-      desc: "Semua modul terhubung. Perubahan di satu bagian langsung tercermin di seluruh sistem secara otomatis.",
-    },
-    {
-      icon: RefreshCw, title: "Data Selalu Terkini",
-      desc: "Semua perubahan langsung ikut tersinkron, jadi info yang kamu lihat selalu terasa up to date.",
-    },
-  ];
 
   return (
     <section
-      ref={sectionRef}
       id="about"
-      className="relative scroll-mt-20 py-24 sm:py-32 overflow-hidden"
-      style={{ background: "#f8f9fa" }}
+      data-gsap-section
+      className="relative scroll-mt-20 overflow-hidden bg-[#eef1eb] py-20 sm:py-28"
     >
-      {/* Top border accent */}
-      <div
-        className="absolute inset-x-0 top-0 h-px"
-        style={{ background: "linear-gradient(to right, transparent, hsl(161 52% 36% / 0.25) 40%, hsl(161 52% 36% / 0.25) 60%, transparent)" }}
-        aria-hidden="true"
-      />
-
-      {/* Parallax radial blob */}
-      <motion.div
-        className="absolute -left-32 top-1/2 -translate-y-1/2 w-[500px] h-[500px] pointer-events-none"
-        style={{ x: reduced ? undefined : bgX, background: "radial-gradient(circle, hsl(161 52% 30% / 0.06) 0%, transparent 65%)" }}
-        aria-hidden="true"
-      />
-      <div className="absolute right-[-8%] top-12 hidden select-none text-[clamp(5rem,14vw,13rem)] font-black leading-none tracking-[-0.08em] text-emerald-950/[0.035] lg:block" aria-hidden="true">
-        VIREON
-      </div>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
-
-          {/* Left — text, slides from left */}
-          <motion.div {...fadeLeftView(0, reduced ?? false)}>
-            <motion.p
-              initial={reduced ? {} : { clipPath: "inset(0 100% 0 0)", opacity: 0 }}
-              whileInView={{ clipPath: "inset(0 0% 0 0)", opacity: 1 }}
-              viewport={{ once: true, margin: "-56px" }}
-              transition={{ duration: 0.55, ease: E_OUT }}
-              className="text-[11.5px] font-bold uppercase tracking-[0.1em] mb-3"
-              style={{ color: "hsl(161 52% 32%)" }}
-            >
-              Mengapa VIREON
-            </motion.p>
-            <h2 className="text-[2rem] sm:text-[2.5rem] font-extrabold text-slate-900 tracking-[-0.025em] leading-[1.1] mb-5">
-              Dirancang untuk
-              <br />
-              Kemudahan Sehari-hari
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-24">
+          <motion.div {...fadeLeftView(0, reduced ?? false)} className="max-w-md">
+            <p className="landing-section-label mb-4">Operasional</p>
+            <h2 data-gsap-reveal className="text-[2rem] font-semibold leading-[1.08] tracking-[-0.055em] text-[#24352f] sm:text-[2.75rem]">
+              Dibuat untuk pekerjaan yang benar-benar terjadi di perpustakaan.
             </h2>
-            <p className="text-[15px] text-slate-500 leading-relaxed mb-8">
-              Ruang baca yang rapi bikin orang lebih gampang menemukan bacaan
-              berikutnya. VIREON bantu tim bergerak cepat tanpa bikin proses
-              terasa ribet.
+            <p className="mt-5 text-[15px] leading-7 text-[#68736d]">
+              Lihat catatan sirkulasi dan inventaris sebagai bagian dari pekerjaan, bukan dekorasi di dashboard.
             </p>
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 px-5 py-3 text-[14px] font-semibold text-white rounded-[10px] transition-all duration-150 active:scale-[0.98] min-h-[44px]"
-              style={{ background: "hsl(161 52% 26%)", boxShadow: "0 1px 3px rgba(0,0,0,0.2), 0 0 0 1px hsl(161 52% 20% / 0.5)" }}
+              className="mt-8 inline-flex min-h-[44px] items-center gap-2 bg-[#285b4c] px-5 py-3 text-[14px] font-semibold text-[#fbfaf6] transition-colors hover:bg-[#1f493d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#285b4c] focus-visible:ring-offset-2 focus-visible:ring-offset-[#eef1eb]"
             >
-              Coba Sekarang
-              <ArrowRight className="w-4 h-4" />
+              Masuk ke Sistem
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </motion.div>
 
-          {/* Right — benefit cards, stagger from right */}
-          <div className="space-y-3.5">
-            {points.map(({ icon: Icon, title, desc }, i) => (
-              <motion.div
-                key={title}
-                initial={reduced ? {} : { x: 56, opacity: 0, scale: 0.96 }}
-                whileInView={reduced ? {} : { x: 0, opacity: 1, scale: 1 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={reduced ? {} : { duration: 0.62, delay: i * 0.12, ease: E_OUT }}
-                whileHover={reduced ? {} : { x: 4, transition: { duration: 0.18 } }}
-                className="group flex items-start gap-4 p-5 bg-white rounded-2xl border border-slate-200/70 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.08)] hover:border-[hsl(161_52%_36%/0.25)] transition-all duration-200"
-              >
-                <div
-                  className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center mt-0.5"
-                  style={{ background: "hsl(161 52% 26% / 0.08)", border: "1px solid hsl(161 52% 36% / 0.2)" }}
-                >
-                  <Icon className="w-[18px] h-[18px]" strokeWidth={1.75} style={{ color: "hsl(161 52% 28%)" }} />
-                </div>
+          <motion.div {...fadeRightView(0.08, reduced ?? false)}>
+            <div className="border-y border-[#27453b]/18" aria-label="Contoh catatan operasional VIREON" data-gsap-focus>
+              <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[#27453b]/15 py-5">
                 <div>
-                  <h3 className="text-[15px] font-bold text-slate-900 mb-1.5 tracking-tight">{title}</h3>
-                  <p className="text-[13.5px] text-slate-500 leading-relaxed">{desc}</p>
+                  <p className="landing-kicker mb-2">Data operasional</p>
+                  <h3 className="text-[17px] font-semibold tracking-[-0.03em] text-[#24352f]">Sirkulasi &amp; inventaris</h3>
                 </div>
-              </motion.div>
-            ))}
-          </div>
+                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#68736d]">Bidang pencatatan</span>
+              </div>
+              <div className="divide-y divide-[#27453b]/15">
+                {[
+                  { icon: ArrowLeftRight, label: "Peminjaman", detail: "Anggota, tanggal pinjam, dan tenggat pengembalian", status: "TRANSAKSI" },
+                  { icon: BookOpen, label: "Katalog", detail: "Judul, pengarang, kategori, ISBN, dan rak", status: "INVENTARIS" },
+                  { icon: CheckCircle2, label: "Pengembalian", detail: "Tanggal kembali, status, dan ketersediaan stok", status: "PEMBARUAN" },
+                ].map(({ icon: Icon, label, detail, status }, i) => (
+                  <div key={label} className="grid grid-cols-[20px_1fr_auto] items-start gap-4 py-5">
+                    <Icon className="mt-0.5 h-4 w-4 text-[#285b4c]" strokeWidth={1.7} aria-hidden="true" />
+                    <div className="min-w-0">
+                      <p className="text-[14px] font-semibold text-[#24352f]">{label}</p>
+                      <p className="mt-1 text-[12.5px] leading-5 text-[#68736d]">{detail}</p>
+                    </div>
+                    <span className={`border-l-2 pl-2 font-mono text-[9px] uppercase tracking-[0.08em] ${i === 2 ? "border-[#285b4c] text-[#285b4c]" : "border-[#b5d6bb] text-[#68736d]"}`}>
+                      {status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
     </section>
@@ -1384,141 +1439,48 @@ function AboutSection() {
 // Word-split headline with variants + staggerChildren.
 // Background orbs drift on scroll via parallax.
 
-const ctaWordVariants = {
-  hidden: { opacity: 0, y: 32, filter: "blur(8px)" },
-  visible: {
-    opacity: 1, y: 0, filter: "blur(0px)",
-    transition: { duration: 0.7, ease: E_OUT },
-  },
-};
-
-const ctaContainerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
-};
-
 function CTASection() {
-  const reduced = useReducedMotion();
-  const sectionRef = useRef<HTMLElement>(null);
   const primaryCtaRef = useGsapMagnetic<HTMLDivElement>();
-  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start end", "end start"] });
-
-  // Orbs drift on scroll — left moves left, right moves right
-  const orbLeftX  = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
-  const orbRightX = useTransform(scrollYProgress, [0, 1], ["10%", "-10%"]);
-  const orbScale  = useTransform(scrollYProgress, [0, 0.5, 1], [0.85, 1.15, 0.9]);
-
-  // Grid rotates very subtly
-  const gridRot = useTransform(scrollYProgress, [0, 1], ["0deg", "1.5deg"]);
 
   return (
     <section
-      ref={sectionRef}
-      className="relative py-24 sm:py-32 overflow-hidden"
-      style={{ background: "hsl(220 40% 6%)" }}
+      data-gsap-section
+      className="landing-cta relative overflow-hidden border-t border-[#b5d6bb]/15 py-20 sm:py-28"
+      style={{ background: "#285b4c" }}
     >
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        <motion.svg
-          className="absolute inset-0 w-full h-full opacity-[0.03]"
-          style={reduced ? {} : { rotate: gridRot }}
-        >
-          <defs>
-            <pattern id="cta-grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#cta-grid)" />
-        </motion.svg>
-
-        {/* Left orb — parallax drift */}
-        <motion.div
-          className="absolute -left-32 top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full"
-          style={{
-            background: "radial-gradient(circle, hsl(161 52% 36% / 0.22) 0%, transparent 60%)",
-            ...(reduced ? {} : { x: orbLeftX, scale: orbScale }),
-          }}
-        />
-        {/* Right orb */}
-        <motion.div
-          className="absolute -right-32 top-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full"
-          style={{
-            background: "radial-gradient(circle, hsl(161 52% 36% / 0.14) 0%, transparent 65%)",
-            ...(reduced ? {} : { x: orbRightX, scale: orbScale }),
-          }}
-        />
-
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-        <div className="absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-100/[0.08]" />
-        <div className="absolute left-1/2 top-1/2 h-[540px] w-[540px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-100/[0.04]" />
-      </div>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto text-center">
-          {/* Badge — scale in */}
-          <motion.div {...scaleView(0, reduced ?? false)} className="inline-block mb-8">
-            <div
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.08em]"
-              style={{ background: "hsl(161 52% 36% / 0.14)", border: "1px solid hsl(161 52% 50% / 0.25)", color: "hsl(161 52% 65%)" }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "hsl(161 52% 60%)" }} />
-              Siap Digunakan Sekarang
-            </div>
-          </motion.div>
-
-          {/* Headline — word-split with variants + stagger */}
-          <motion.h2
-            variants={reduced ? {} : ctaContainerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-80px" }}
-            className="text-[2.5rem] sm:text-[3rem] lg:text-[3.5rem] font-extrabold text-white tracking-[-0.03em] leading-[1.05] mb-5"
-            aria-label="Siap Mengubah Cara Mengelola Perpustakaan?"
-          >
-            <span className="block">
-              {["Siap", "Mengubah", "Cara"].map((w) => (
-                <motion.span key={w} variants={reduced ? {} : ctaWordVariants} className="inline-block mr-[0.2em]">{w}</motion.span>
-              ))}
-            </span>
-            <span className="block">
-              {["Mengelola", "Perpustakaan?"].map((w) => (
-                <motion.span key={w} variants={reduced ? {} : ctaWordVariants} className="inline-block mr-[0.2em]">{w}</motion.span>
-              ))}
-            </span>
-          </motion.h2>
-
-          {/* Sub — blur fade */}
-          <motion.p {...fadeUpView(0.2, reduced ?? false)} className="text-[15px] text-white/50 leading-relaxed mb-10 max-w-lg mx-auto">
-            Tidak perlu instalasi rumit, tidak perlu konfigurasi panjang — cukup
-            masuk dan mulai bekerja.
-          </motion.p>
-
-          {/* Buttons — spring entrance */}
-          <motion.div
-            initial={reduced ? {} : { opacity: 0, scale: 0.9, y: 16 }}
-            whileInView={reduced ? {} : { opacity: 1, scale: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={reduced ? {} : { type: "spring", stiffness: 100, damping: 14, delay: 0.3 }}
-            className="flex flex-wrap items-center justify-center gap-3"
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col items-start justify-between gap-10 lg:flex-row lg:items-end">
+          <div data-gsap-cta-copy className="max-w-2xl">
+            <p className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#b5d6bb]">Ruang kerja VIREON</p>
+            <h2 className="text-[2.35rem] font-semibold leading-[1.04] tracking-[-0.05em] text-left text-[#f5f3ed] sm:text-[3.4rem]">
+              Kelola perpustakaan tanpa kehilangan jejak.
+            </h2>
+            <p className="mt-5 max-w-xl text-[15px] leading-7 text-white/85">
+              Katalog, sirkulasi, dan laporan berada di tempat yang sama — siap dipakai oleh tim perpustakaan.
+            </p>
+          </div>
+          <div
+            data-gsap-cta-actions
+            className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row"
           >
             <div ref={primaryCtaRef} className="inline-flex will-change-transform">
               <Link
                 href="/login"
                 data-testid="link-cta-login"
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-[10px] bg-white px-6 py-3.5 text-[14px] font-semibold text-slate-900 shadow-[0_0_0_1px_rgba(255,255,255,0.1)] transition-[background-color,box-shadow] hover:bg-slate-50 hover:shadow-[0_10px_30px_rgba(255,255,255,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+                className="inline-flex min-h-[46px] items-center justify-center gap-2 bg-[#fbfaf6] px-6 py-3.5 text-[14px] font-semibold text-[#173d34] transition-[transform,background-color,box-shadow] hover:-translate-y-0.5 hover:bg-[#e8f3e9] hover:shadow-[0_10px_24px_rgba(4,24,19,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b5d6bb] focus-visible:ring-offset-2 focus-visible:ring-offset-[#285b4c]"
               >
-                Masuk ke VIREON
+                Masuk ke sistem
                 <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
             <button
               onClick={() => scrollTo("features")}
               data-testid="button-cta-features"
-              className="inline-flex items-center gap-2 px-6 py-3.5 text-[14px] font-medium text-white/60 border border-white/10 rounded-[10px] hover:border-white/20 hover:text-white/80 active:scale-[0.98] transition-all min-h-[44px]"
+              className="inline-flex min-h-[46px] items-center justify-center gap-2 border border-white/40 px-5 py-3.5 text-[14px] font-medium text-white/90 transition-colors hover:border-white/75 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b5d6bb]"
             >
-              Pelajari Fitur
+              Lihat modul
             </button>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>
@@ -1535,7 +1497,7 @@ function LandingFooter() {
   return (
     <footer className="bg-white border-t border-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-14">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-12">
 
           {/* Brand */}
           <motion.div
@@ -1553,24 +1515,9 @@ function LandingFooter() {
                 decoding="sync"
               />
             </div>
-            <p className="text-[13.5px] text-slate-500 leading-relaxed max-w-[280px] mb-5">
-              Sistem manajemen perpustakaan digital yang ringan, cepat, dan mudah disukai.
+            <p className="mb-5 max-w-[300px] text-[14px] leading-relaxed text-slate-700">
+              Ruang kerja untuk katalog, anggota, peminjaman, pengembalian, dan laporan perpustakaan.
             </p>
-            <div className="flex flex-wrap gap-1.5">
-              {["Koleksi", "Anggota", "Peminjaman", "Laporan"].map((tag, i) => (
-                <motion.span
-                  key={tag}
-                  initial={reduced ? {} : { opacity: 0, scale: 0.8 }}
-                  whileInView={reduced ? {} : { opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={reduced ? {} : { duration: 0.35, delay: 0.1 + i * 0.07, ease: E_OUT }}
-                  className="text-[10.5px] font-medium px-2.5 py-0.5 rounded-full"
-                  style={{ background: "hsl(161 52% 26% / 0.07)", border: "1px solid hsl(161 52% 36% / 0.18)", color: "hsl(161 52% 32%)" }}
-                >
-                  {tag}
-                </motion.span>
-              ))}
-            </div>
           </motion.div>
 
           {/* Nav */}
@@ -1579,11 +1526,11 @@ function LandingFooter() {
             <ul className="space-y-3">
               {[{ label: "Cara Kerja", id: "how" }, { label: "Fitur", id: "features" }, { label: "Tentang", id: "about" }].map(({ label, id }) => (
                 <li key={label}>
-                  <button onClick={() => scrollTo(id)} className="text-[13.5px] text-slate-500 hover:text-slate-900 transition-colors duration-150">{label}</button>
+                  <button onClick={() => scrollTo(id)} className="text-[13.5px] text-slate-700 hover:text-slate-900 transition-colors duration-150">{label}</button>
                 </li>
               ))}
               <li>
-                <Link href="/login" className="text-[13.5px] text-slate-500 hover:text-slate-900 transition-colors duration-150">Masuk</Link>
+                <Link href="/login" className="text-[13.5px] text-slate-700 hover:text-slate-900 transition-colors duration-150">Masuk</Link>
               </li>
             </ul>
           </motion.div>
@@ -1593,21 +1540,15 @@ function LandingFooter() {
             <h3 className="text-[11px] font-bold text-slate-900 uppercase tracking-[0.08em] mb-4">Informasi</h3>
             <ul className="space-y-3">
               <li>
-                <p className="text-[13px] text-slate-400">Dikembangkan oleh</p>
+                <p className="text-[13px] text-slate-600">Dikembangkan oleh</p>
                 <p className="text-[13.5px] font-semibold text-slate-700 mt-0.5">REYHAN IRZA</p>
               </li>
-              <li><p className="text-[13.5px] text-slate-500">Dibuat untuk ruang baca yang terus tumbuh.</p></li>
-              <li>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ background: "hsl(161 52% 26% / 0.07)", border: "1px solid hsl(161 52% 36% / 0.18)" }}>
-                  <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "hsl(161 52% 44%)" }} />
-                  <span className="text-[10.5px] font-medium" style={{ color: "hsl(161 52% 30%)" }}>Sistem Aktif</span>
-                </div>
-              </li>
+              <li><p className="text-[13.5px] text-slate-700">Dibuat untuk ruang baca yang terus tumbuh.</p></li>
             </ul>
 
             <div className="mt-7 pt-6 border-t border-slate-100">
               <p className="text-[11px] font-bold text-slate-900 uppercase tracking-[0.08em] mb-2">Kerja sama &amp; feedback</p>
-              <p className="text-[13px] text-slate-500 leading-relaxed max-w-[250px] mb-3.5">
+              <p className="text-[13px] text-slate-700 leading-relaxed max-w-[250px] mb-3.5">
                 Punya ide, pertanyaan, atau ingin berkolaborasi? Hubungi kami.
               </p>
               <div className="flex items-center gap-2.5">
@@ -1617,7 +1558,7 @@ function LandingFooter() {
                   rel="noreferrer"
                   aria-label="Hubungi melalui WhatsApp"
                   title="WhatsApp"
-                  className="group inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600 hover:shadow-[0_6px_16px_rgba(16,185,129,0.14)] focus-visible:outline-none"
+                  className="group inline-flex h-9 w-9 items-center justify-center rounded-sm border border-slate-200/80 bg-white text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600 hover:shadow-[0_6px_16px_rgba(16,185,129,0.14)] focus-visible:outline-none"
                 >
                   <MessageCircle className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" />
                   <span className="sr-only">WhatsApp</span>
@@ -1628,7 +1569,7 @@ function LandingFooter() {
                   rel="noreferrer"
                   aria-label="Kunjungi Instagram @irzalvano_"
                   title="Instagram"
-                  className="group inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-fuchsia-200 hover:bg-fuchsia-50 hover:text-fuchsia-600 hover:shadow-[0_6px_16px_rgba(217,70,239,0.14)] focus-visible:outline-none"
+                  className="group inline-flex h-9 w-9 items-center justify-center rounded-sm border border-slate-200/80 bg-white text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-fuchsia-200 hover:bg-fuchsia-50 hover:text-fuchsia-600 hover:shadow-[0_6px_16px_rgba(217,70,239,0.14)] focus-visible:outline-none"
                 >
                   <Instagram className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" />
                   <span className="sr-only">Instagram @irzalvano_</span>
@@ -1637,7 +1578,7 @@ function LandingFooter() {
                   href="mailto:irzanour@gmail.com"
                   aria-label="Kirim email ke irzanour@gmail.com"
                   title="Email"
-                  className="group inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-600 hover:shadow-[0_6px_16px_rgba(14,165,233,0.14)] focus-visible:outline-none"
+                  className="group inline-flex h-9 w-9 items-center justify-center rounded-sm border border-slate-200/80 bg-white text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-600 hover:shadow-[0_6px_16px_rgba(14,165,233,0.14)] focus-visible:outline-none"
                 >
                   <Mail className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" />
                   <span className="sr-only">Email irzanour@gmail.com</span>
@@ -1648,7 +1589,7 @@ function LandingFooter() {
                   rel="noreferrer"
                   aria-label="Kunjungi GitHub Reyhan Irza"
                   title="GitHub"
-                  className="group inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 hover:shadow-[0_6px_16px_rgba(15,23,42,0.12)] focus-visible:outline-none"
+                  className="group inline-flex h-9 w-9 items-center justify-center rounded-sm border border-slate-200/80 bg-white text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 hover:shadow-[0_6px_16px_rgba(15,23,42,0.12)] focus-visible:outline-none"
                 >
                   <Github className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" />
                   <span className="sr-only">GitHub Reyhan Irza</span>
@@ -1659,8 +1600,8 @@ function LandingFooter() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-[12px] text-slate-400">&copy; {year} Vireon Library. Dibuat untuk ruang baca yang terus tumbuh.</p>
-          <p className="text-[12px] text-slate-400">Dirancang dan dikembangkan oleh <span className="font-mono tracking-[0.08em] text-slate-600">REYHAN IRZA</span></p>
+          <p className="text-[12.5px] text-slate-600">&copy; {year} Vireon Library. Dibuat untuk ruang baca yang terus tumbuh.</p>
+          <p className="text-[12.5px] text-slate-600">Dirancang dan dikembangkan oleh <span className="font-mono tracking-[0.08em] font-semibold text-slate-800">REYHAN IRZA</span></p>
         </div>
       </div>
     </footer>
@@ -1670,6 +1611,8 @@ function LandingFooter() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
+  const landingRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const root = document.documentElement;
     const wasDark = root.classList.contains("dark");
@@ -1679,13 +1622,14 @@ export default function LandingPage() {
     };
   }, []);
 
+  useGsapLandingScroll(landingRef);
+
   return (
-    <div className="vireon-cursor-active relative min-h-screen bg-[#fbfaf6] text-slate-900 overflow-x-hidden">
-      <CustomCursor />
+    <div ref={landingRef} className="landing-shell relative min-h-screen overflow-x-hidden">
       <LandingNav />
       <ScrollUpDock />
       <main>
-        <HeroSection />
+        <LandingHeroEditorial />
         <MarqueeTicker />
         <StatsSection />
         <HowItWorksSection />

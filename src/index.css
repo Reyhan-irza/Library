@@ -1,6 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Sora:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Sora:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "../design-system/tokens.css";
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
@@ -74,41 +75,41 @@
   --elevate-1: rgba(0,0,0,.03);
   --elevate-2: rgba(0,0,0,.06);
 
-  --background:   42 38% 97%;
-  --foreground:   168 28% 13%;
+  --background:   40 30% 96%;
+  --foreground:   161 22% 15%;
 
-  --border:       38 22% 88%;
-  --input:        38 22% 88%;
-  --ring:         163 45% 31%;
+  --border:       38 17% 84%;
+  --input:        38 17% 84%;
+  --ring:         161 36% 30%;
 
-  --card:            40 33% 99%;
-  --card-foreground: 168 28% 13%;
-  --card-border:     38 22% 88%;
+  --card:            40 35% 98%;
+  --card-foreground: 161 22% 15%;
+  --card-border:     38 17% 84%;
 
-  --sidebar:            42 32% 98%;
-  --sidebar-foreground: 168 28% 13%;
-  --sidebar-border:     38 22% 88%;
-  --sidebar-primary:    163 45% 31%;
+  --sidebar:            39 28% 94%;
+  --sidebar-foreground: 161 22% 15%;
+  --sidebar-border:     38 17% 84%;
+  --sidebar-primary:    161 36% 30%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent:     42 24% 93%;
-  --sidebar-accent-foreground:  168 28% 13%;
-  --sidebar-ring:       163 45% 31%;
+  --sidebar-accent:     40 24% 89%;
+  --sidebar-accent-foreground:  161 22% 15%;
+  --sidebar-ring:       161 36% 30%;
 
-  --popover:            40 33% 99%;
-  --popover-foreground: 168 28% 13%;
-  --popover-border:     38 22% 88%;
+  --popover:            40 35% 98%;
+  --popover-foreground: 161 22% 15%;
+  --popover-border:     38 17% 84%;
 
-  --primary:            163 45% 31%;
+  --primary:            161 36% 30%;
   --primary-foreground: 0   0% 100%;
 
   --secondary:            188 41% 31%;
   --secondary-foreground: 0   0% 100%;
 
-  --muted:            42 24% 93%;
-  --muted-foreground: 168 10% 45%;
+  --muted:            40 22% 91%;
+  --muted-foreground: 161 10% 43%;
 
-  --accent:            42 24% 93%;
-  --accent-foreground: 168 28% 13%;
+  --accent:            40 22% 91%;
+  --accent-foreground: 161 22% 15%;
 
   --destructive:            0 84% 60%;
   --destructive-foreground: 0  0% 100%;
@@ -119,7 +120,7 @@
   --chart-4: 160 84% 39%;
   --chart-5: 180 100% 25%;
 
-  --radius: 1.25rem;
+  --radius: 0.6rem;
 
   /* Automatically computed borders */
   --primary-border: hsl(from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
@@ -460,5 +461,791 @@ input:focus, textarea:focus, select:focus {
   }
   .depth-layer {
     transform: none !important;
+  }
+}
+
+/* ─── PHASE 3.5 / EDITORIAL OPERATIONS SYSTEM ───────────────────────────────
+   The application uses paper, ink and a restrained forest accent. These
+   overrides intentionally flatten the old glass-heavy visual language without
+   changing page behaviour or the existing utility/component API. */
+:root {
+  --paper: var(--vireon-paper);
+  --paper-raised: var(--vireon-paper-raised);
+  --paper-deep: var(--vireon-mist);
+  --ink: var(--vireon-ink-strong);
+  --ink-soft: var(--vireon-muted);
+  --forest: var(--vireon-green);
+  --forest-deep: var(--vireon-green-dark);
+  --rule: var(--vireon-rule);
+  --shadow-editorial: var(--vireon-shadow-panel);
+  --shadow-float: 0 18px 40px rgba(34, 48, 42, 0.1);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9990;
+  opacity: 0.02;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)'/%3E%3C/svg%3E");
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--ink);
+  letter-spacing: -0.035em;
+}
+
+.dark body {
+  background: hsl(var(--background));
+}
+
+.dark {
+  --paper: #18231f;
+  --paper-raised: #202c27;
+  --paper-deep: #111a17;
+  --ink: #eee9de;
+  --ink-soft: #a5afa7;
+  --rule: rgba(232, 235, 223, 0.15);
+}
+
+/* Replace translucent panels with quiet, legible surfaces. */
+.glass,
+.glass-sidebar {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
+  border-radius: var(--vireon-radius-md);
+}
+
+.glass {
+  box-shadow: var(--shadow-editorial);
+}
+
+.glass-sidebar {
+  background: hsl(var(--sidebar));
+  border-right: 1px solid hsl(var(--sidebar-border));
+}
+
+.bg-white {
+  background-color: var(--paper-raised) !important;
+}
+
+.backdrop-blur-sm,
+.backdrop-blur-md,
+.backdrop-blur-lg,
+.backdrop-blur-xl,
+.backdrop-blur-2xl {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.shadow-card {
+  box-shadow: var(--shadow-editorial);
+}
+
+.card-lift {
+  transition: border-color var(--vireon-duration-fast) ease, box-shadow var(--vireon-duration-fast) ease, transform var(--vireon-duration-fast) ease;
+}
+
+.card-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-float);
+}
+
+.gradient-text {
+  background: none;
+  color: var(--forest-deep);
+  -webkit-text-fill-color: currentColor;
+}
+
+.card-glow-green:hover,
+.card-glow-blue:hover,
+.card-glow-amber:hover,
+.card-glow-emerald:hover,
+.card-glow-rose:hover,
+.btn-primary-glow:hover {
+  box-shadow: var(--shadow-float);
+}
+
+.mouse-glow {
+  display: none;
+}
+
+.vireon-progress {
+  height: 2px;
+  background: var(--forest);
+}
+
+.app-page {
+  width: 100%;
+  max-width: 1480px;
+  margin-inline: auto;
+}
+
+.vireon-page-title {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: clamp(1.7rem, 2.4vw, 2.35rem);
+  font-weight: 600;
+  letter-spacing: -0.055em;
+  color: var(--ink);
+}
+
+.vireon-page-kicker {
+  color: var(--forest);
+  font-family: "Space Mono", monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.font-editorial {
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.055em;
+}
+
+.vireon-rule {
+  border-color: var(--rule) !important;
+}
+
+/* Operational pages: make standard data surfaces quieter and more compact. */
+[class*="rounded-3xl"].glass,
+[class*="rounded-2xl"].glass {
+  border-radius: 0.65rem;
+}
+
+[class*="rounded-3xl"].shadow-card:not(.glass) {
+  border-radius: 0.65rem;
+}
+
+input,
+textarea,
+select {
+  border-radius: var(--vireon-radius-sm) !important;
+}
+
+button,
+[role="button"] {
+  transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Keep status meaning restrained: a text label and a small marker do the work. */
+.status-dot {
+  box-shadow: none !important;
+}
+
+/* ─── VIREON WORKSPACE CONTRACT ────────────────────────────────────────────
+   Shared authenticated surfaces consume the same editorial tokens as the
+   public system without changing page data, navigation, or workflow logic. */
+.vireon-workspace {
+  --ink: var(--vireon-ink-strong);
+  --ink-soft: var(--vireon-muted);
+  --paper: var(--vireon-paper);
+  --paper-raised: var(--vireon-paper-raised);
+  --paper-deep: var(--vireon-mist);
+  --forest: var(--vireon-green);
+  --forest-deep: var(--vireon-green-dark);
+  --rule: var(--vireon-rule);
+  --shadow-editorial: var(--vireon-shadow-panel);
+  background: var(--vireon-paper) !important;
+  color: var(--vireon-ink);
+  color-scheme: light;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.dark .vireon-workspace {
+  --vireon-ink-strong: hsl(var(--foreground));
+  --vireon-ink: hsl(var(--foreground));
+  --vireon-muted: hsl(var(--muted-foreground));
+  --vireon-paper: hsl(var(--background));
+  --vireon-paper-raised: hsl(var(--card));
+  --vireon-mist: hsl(var(--muted));
+  --vireon-deep: hsl(var(--background));
+  --vireon-green: hsl(var(--primary));
+  --vireon-green-dark: hsl(var(--primary));
+  --vireon-accent: hsl(var(--accent));
+  --vireon-rule: hsl(var(--border));
+  --vireon-shadow-panel: 0 14px 38px rgba(0, 0, 0, 0.24), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --vireon-shadow-focus: 0 0 0 3px hsl(var(--ring) / 0.3);
+  --shadow-float: 0 18px 40px rgba(0, 0, 0, 0.32);
+  color-scheme: dark;
+}
+
+.vireon-workspace > main {
+  background: var(--vireon-paper);
+}
+
+.vireon-workspace > main > header {
+  background: color-mix(in srgb, var(--vireon-paper-raised) 95%, transparent);
+  border-color: var(--vireon-rule);
+}
+
+.vireon-workspace .glass-sidebar {
+  background: var(--vireon-paper-raised);
+  border-right-color: var(--vireon-rule);
+}
+
+.vireon-workspace .glass,
+.vireon-workspace .shadow-card {
+  border-color: var(--vireon-rule);
+  box-shadow: var(--vireon-shadow-panel);
+}
+
+.vireon-workspace .app-page {
+  padding-block: var(--vireon-space-4);
+}
+
+.vireon-workspace input,
+.vireon-workspace textarea,
+.vireon-workspace select {
+  border-color: var(--vireon-rule);
+  transition: border-color var(--vireon-duration-fast) ease, box-shadow var(--vireon-duration-fast) ease, background-color var(--vireon-duration-fast) ease;
+}
+
+.vireon-workspace input:focus-visible,
+.vireon-workspace textarea:focus-visible,
+.vireon-workspace select:focus-visible,
+.vireon-workspace button:focus-visible,
+.vireon-workspace a:focus-visible,
+.vireon-public-catalog input:focus-visible,
+.vireon-public-catalog textarea:focus-visible,
+.vireon-public-catalog select:focus-visible,
+.vireon-public-catalog button:focus-visible,
+.vireon-public-catalog a:focus-visible {
+  outline: 2px solid var(--vireon-green);
+  outline-offset: 2px;
+  box-shadow: var(--vireon-shadow-focus);
+}
+
+.vireon-workspace [role="tab"] {
+  border-radius: var(--vireon-radius-sm);
+}
+
+.vireon-workspace .vireon-page-kicker,
+.vireon-workspace .font-mono {
+  font-family: "Space Mono", monospace;
+}
+
+.vireon-workspace .rounded-2xl,
+.vireon-workspace .rounded-3xl {
+  border-radius: var(--vireon-radius-md);
+}
+
+/* The public catalog shares the same reading surface and product language. */
+.vireon-public-catalog {
+  background: var(--vireon-paper) !important;
+  color: var(--vireon-ink);
+}
+
+.vireon-public-catalog > header {
+  background: color-mix(in srgb, var(--vireon-paper-raised) 94%, transparent);
+  border-color: var(--vireon-rule);
+}
+
+.vireon-public-catalog article {
+  border-color: var(--vireon-rule);
+  border-radius: var(--vireon-radius-md);
+  box-shadow: var(--vireon-shadow-panel);
+}
+
+.vireon-public-catalog article:hover {
+  box-shadow: var(--vireon-shadow-panel);
+}
+
+@media (max-width: 767px) {
+  body::before { opacity: 0.015; }
+  .app-page { max-width: none; }
+}
+
+/* ─── PUBLIC LANDING / INSTITUTIONAL EDITORIAL SYSTEM ───────────────────────
+   Kept scoped so the operational application retains its own surfaces. */
+.landing-shell {
+  --landing-paper: #f5f3ed;
+  --landing-paper-raised: #fbfaf6;
+  --landing-ink: #24352f;
+  --landing-muted: #68736d;
+  --landing-forest: #285b4c;
+  --landing-rule: rgba(39, 69, 59, 0.16);
+  background: var(--landing-paper);
+  color: var(--landing-ink);
+}
+
+body:has(.landing-shell)::before {
+  display: none;
+}
+
+.landing-shell::selection {
+  background: rgba(40, 91, 76, 0.18);
+}
+
+.landing-shell .landing-display {
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.055em;
+}
+
+.landing-shell .landing-kicker {
+  color: var(--landing-forest);
+  font-family: "Space Mono", monospace;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.landing-shell .landing-rule {
+  border-color: var(--landing-rule);
+}
+
+.landing-shell .landing-section-label {
+  color: var(--landing-forest);
+  font-family: "Space Mono", monospace;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.landing-shell .landing-outline-link {
+  border-bottom: 1px solid rgba(40, 91, 76, 0.45);
+  color: var(--landing-forest);
+  transition: border-color 160ms ease, color 160ms ease;
+}
+
+.landing-shell .landing-outline-link:hover {
+  border-color: var(--landing-ink);
+  color: var(--landing-ink);
+}
+
+.landing-shell .landing-paper-grid {
+  background-image:
+    linear-gradient(to right, rgba(39, 69, 59, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(39, 69, 59, 0.055) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+}
+
+.landing-shell .landing-surface {
+  background: var(--landing-paper-raised);
+  border: 1px solid var(--landing-rule);
+  box-shadow: 0 1px 2px rgba(31, 52, 44, 0.04), 0 12px 30px rgba(31, 52, 44, 0.045);
+}
+
+.landing-shell .landing-nav {
+  border-bottom: 1px solid transparent;
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.landing-shell .landing-nav[data-scrolled="true"] {
+  background: rgba(245, 243, 237, 0.96);
+  border-color: var(--landing-rule);
+  box-shadow: 0 4px 18px rgba(31, 52, 44, 0.05);
+}
+
+.landing-shell .landing-hero {
+  background:
+    linear-gradient(90deg, rgba(245, 243, 237, 0.98) 0%, rgba(245, 243, 237, 0.94) 47%, rgba(245, 243, 237, 0.64) 100%),
+    url("/library-bg.jpg") center 32% / cover no-repeat;
+}
+
+.landing-shell .landing-hero::after {
+  background: linear-gradient(to bottom, transparent 76%, var(--landing-paper) 100%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.landing-shell .landing-hero-visual {
+  background: rgba(251, 250, 246, 0.86);
+  border: 1px solid rgba(39, 69, 59, 0.18);
+  box-shadow: 0 18px 48px rgba(31, 52, 44, 0.11);
+}
+
+.landing-shell .landing-hero-visual::before {
+  border: 1px solid rgba(39, 69, 59, 0.12);
+  content: "";
+  inset: 14px;
+  pointer-events: none;
+  position: absolute;
+}
+
+.landing-shell .landing-hero [data-gsap="hero-visual"] {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.landing-shell .landing-hero [data-gsap="hero-title"] {
+  will-change: clip-path, opacity, transform;
+}
+
+.landing-shell .landing-hero [data-gsap="hero-title-line"] {
+  display: block;
+  transform-origin: left bottom;
+  will-change: transform, opacity, filter;
+}
+
+.landing-shell .landing-scroll-orbit {
+  opacity: 0.8;
+  isolation: isolate;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.landing-shell .landing-scroll-orbit::before {
+  border: 1px dashed currentColor;
+  border-radius: 999px;
+  content: "";
+  inset: 9%;
+  opacity: 0.24;
+  position: absolute;
+  transform: rotate(28deg);
+}
+
+.landing-shell .landing-scroll-orbit::after {
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  content: "";
+  inset: 18%;
+  opacity: 0.45;
+  position: absolute;
+}
+
+.landing-shell .landing-scroll-orbit--how {
+  color: rgba(40, 91, 76, 0.13);
+  transform: rotate(18deg);
+}
+
+.landing-shell .landing-scroll-orbit--about {
+  color: rgba(40, 91, 76, 0.12);
+  transform: rotate(-24deg);
+}
+
+.landing-shell .landing-scroll-orbit--cta {
+  color: rgba(181, 214, 187, 0.2);
+  transform: rotate(26deg);
+}
+
+.landing-shell .landing-scroll-orbit--cta-inner {
+  color: rgba(181, 214, 187, 0.18);
+  transform: rotate(-18deg);
+}
+
+.landing-shell .landing-chapter-wash {
+  background:
+    radial-gradient(circle at 34% 48%, rgba(181, 214, 187, 0.28), transparent 34%),
+    radial-gradient(circle at 68% 56%, rgba(40, 91, 76, 0.12), transparent 42%);
+  filter: blur(18px);
+  inset: -16% -12%;
+  mix-blend-mode: multiply;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  will-change: transform, opacity;
+}
+
+.landing-shell .landing-chapter-wash--dark {
+  background:
+    radial-gradient(circle at 38% 46%, rgba(181, 214, 187, 0.32), transparent 34%),
+    radial-gradient(circle at 72% 50%, rgba(8, 38, 31, 0.22), transparent 44%);
+  mix-blend-mode: screen;
+}
+
+.landing-shell [data-gsap-curtain] {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(40, 91, 76, 0.62) 18%,
+    rgba(181, 214, 187, 0.9) 50%,
+    rgba(40, 91, 76, 0.62) 82%,
+    transparent
+  );
+  height: 1px;
+  left: 8%;
+  opacity: 0.72;
+  position: absolute;
+  right: 8%;
+  top: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
+}
+
+.landing-shell .landing-chapter-wash--dark + [data-gsap-curtain],
+.landing-shell .landing-cta [data-gsap-curtain] {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(181, 214, 187, 0.82) 18%,
+    rgba(239, 247, 239, 0.92) 50%,
+    rgba(181, 214, 187, 0.82) 82%,
+    transparent
+  );
+}
+
+.landing-shell .landing-workflow-track {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.landing-shell .landing-workflow-viewport {
+  overflow: visible;
+}
+
+.landing-shell .landing-workflow-panel {
+  min-height: 280px;
+}
+
+.landing-shell .landing-workflow-progress-fill {
+  transform: scaleX(1);
+}
+
+.landing-shell [data-gsap-depth],
+.landing-shell [data-gsap-focus],
+.landing-shell [data-gsap-rail],
+.landing-shell [data-gsap-section] h2,
+.landing-shell [data-gsap-section] .landing-section-label,
+.landing-shell [data-gsap-section] .landing-kicker,
+.landing-shell [data-gsap-wash],
+.landing-shell [data-gsap-curtain] {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.landing-shell .landing-stat-grid > * + * {
+  border-left: 1px solid var(--landing-rule);
+}
+
+@media (max-width: 639px) {
+  .landing-shell .landing-stat-grid > *:nth-child(odd) {
+    border-left: 0;
+  }
+  .landing-shell .landing-stat-grid > *:nth-child(n + 3) {
+    border-top: 1px solid var(--landing-rule);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-shell .landing-nav,
+  .landing-shell .landing-outline-link {
+    transition: none;
+  }
+
+  .landing-shell .landing-hero [data-gsap="hero-visual"] {
+    transform: none !important;
+  }
+
+  .landing-shell .landing-scroll-orbit {
+    display: none;
+  }
+
+  .landing-shell .landing-chapter-wash {
+    display: none;
+  }
+}
+
+/* ─── PUBLIC PASS II / QUIET OPERATIONS ──────────────────────────────────────
+   The landing page is intentionally more like an institutional annual report
+   than a SaaS template: measured type, hard rules, and a few deep green
+   moments to give the story a spine. */
+.landing-shell {
+  --landing-ink-strong: var(--vireon-ink-strong);
+  --landing-ink: var(--vireon-ink);
+  --landing-muted: var(--vireon-muted);
+  --landing-mist: var(--vireon-mist);
+  --landing-paper: var(--vireon-paper);
+  --landing-paper-raised: var(--vireon-paper-raised);
+  --landing-deep: var(--vireon-deep);
+  --landing-accent: var(--vireon-accent);
+  --landing-rule: var(--vireon-rule);
+  background:
+    radial-gradient(circle at 8% 14%, rgba(183, 214, 188, 0.12), transparent 24rem),
+    var(--landing-paper);
+}
+
+.landing-shell .landing-display {
+  font-size: clamp(3.15rem, 6.4vw, 6.2rem);
+  line-height: 0.91;
+  letter-spacing: -0.065em;
+}
+
+.landing-shell .landing-hero {
+  min-height: min(790px, 88svh);
+  background:
+    linear-gradient(90deg, rgba(245, 243, 237, 0.96) 0%, rgba(245, 243, 237, 0.86) 36%, rgba(245, 243, 237, 0.48) 66%, rgba(245, 243, 237, 0.16) 100%),
+    url("/library-bg.jpg") center 35% / cover no-repeat;
+}
+
+.landing-shell .landing-hero::before {
+  background: linear-gradient(90deg, var(--landing-paper) 1px, transparent 1px);
+  background-size: calc((100vw - 80rem) / 2 + 1px) 100%;
+  content: "";
+  inset: 0;
+  opacity: 0.28;
+  pointer-events: none;
+  position: absolute;
+}
+
+.landing-shell .landing-hero-visual {
+  background: rgba(252, 251, 247, 0.88);
+  border-color: rgba(31, 63, 52, 0.28);
+  box-shadow: var(--vireon-shadow-panel);
+}
+
+.landing-shell .landing-hero-visual::after {
+  background: linear-gradient(90deg, transparent, rgba(181, 214, 187, 0.22), transparent);
+  content: "";
+  height: 1px;
+  left: 7%;
+  position: absolute;
+  right: 7%;
+  top: 0;
+}
+
+.landing-shell .landing-stat-grid {
+  background: rgba(252, 251, 247, 0.58);
+}
+
+.landing-shell .landing-stat-grid > * {
+  min-height: 148px;
+}
+
+.landing-shell .landing-stat-grid > *:first-child {
+  background: rgba(181, 214, 187, 0.1);
+}
+
+.landing-shell #how,
+.landing-shell #about {
+  background:
+    linear-gradient(90deg, rgba(31, 63, 52, 0.045) 1px, transparent 1px),
+    linear-gradient(rgba(31, 63, 52, 0.045) 1px, transparent 1px),
+    #eef1eb !important;
+  background-size: 64px 64px;
+}
+
+.landing-shell #features {
+  background: var(--landing-paper-raised) !important;
+}
+
+.landing-shell #features .group {
+  border-radius: var(--vireon-radius-sm);
+  min-height: 248px;
+  padding: clamp(1.25rem, 2.4vw, 2rem);
+  transition: border-color var(--vireon-duration-base) ease, box-shadow var(--vireon-duration-base) ease, transform var(--vireon-duration-base) ease;
+}
+
+.landing-shell #features .group:hover {
+  box-shadow: 0 16px 34px rgba(29, 59, 49, 0.09);
+  transform: translateY(-3px);
+}
+
+.landing-shell #features .group:nth-child(1),
+.landing-shell #features .group:nth-child(4) {
+  background: var(--landing-deep);
+  color: #eff7ef;
+}
+
+.landing-shell #features .group:nth-child(1) h3,
+.landing-shell #features .group:nth-child(4) h3 {
+  color: #eff7ef;
+}
+
+.landing-shell #features .group:nth-child(1) p,
+.landing-shell #features .group:nth-child(4) p {
+  color: rgba(239, 247, 239, 0.67);
+}
+
+.landing-shell .landing-cta {
+  background:
+    radial-gradient(circle at 78% 22%, rgba(181, 214, 187, 0.2), transparent 22rem),
+    var(--landing-deep) !important;
+}
+
+.landing-shell footer {
+  background: var(--landing-paper-raised);
+}
+
+.landing-shell footer a,
+.landing-shell footer button {
+  min-height: 44px;
+}
+
+.landing-shell footer ul a,
+.landing-shell footer ul button {
+  font-size: 0.875rem;
+}
+
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .landing-shell .landing-workflow-section {
+    align-items: center;
+    display: flex;
+    min-height: 100svh;
+  }
+
+  .landing-shell .landing-workflow-section > .relative {
+    width: 100%;
+  }
+
+  .landing-shell .landing-workflow-viewport {
+    overflow: hidden;
+  }
+
+  .landing-shell .landing-workflow-track {
+    display: flex;
+    gap: 0;
+    width: 300%;
+    will-change: transform;
+  }
+
+  .landing-shell .landing-workflow-panel {
+    flex: 0 0 33.333333%;
+    min-height: clamp(24rem, 58svh, 32rem);
+  }
+
+  .landing-shell .landing-workflow-progress-fill {
+    transform: scaleX(0);
+    will-change: transform;
+  }
+}
+
+@media (max-width: 767px) {
+  .landing-shell .landing-hero {
+    min-height: auto;
+    background:
+      linear-gradient(180deg, rgba(245, 243, 237, 0.92) 0%, rgba(245, 243, 237, 0.82) 62%, rgba(245, 243, 237, 0.6) 100%),
+      url("/library-bg.jpg") 56% center / cover no-repeat;
+  }
+
+  .landing-shell .landing-display {
+    font-size: clamp(3.1rem, 15vw, 4.6rem);
+  }
+
+  .landing-shell .landing-stat-grid > * {
+    min-height: 126px;
+  }
+}
+
+@media (max-width: 1023px), (prefers-reduced-motion: reduce) {
+  .landing-shell .landing-workflow-viewport {
+    overflow: visible;
+  }
+
+  .landing-shell .landing-workflow-track {
+    display: grid;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .landing-shell .landing-workflow-panel {
+    min-height: auto;
   }
 }

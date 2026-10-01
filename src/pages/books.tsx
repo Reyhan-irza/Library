@@ -104,11 +104,11 @@ function BookForm({ initial, onSubmit, loading, categories, racks }: {
           className="mt-1 w-full h-10 px-3 rounded-xl border border-border bg-background/60 text-sm focus:outline-none focus:border-primary transition-colors" />
       </div>
       <div>
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
           <label htmlFor={fileInputId} className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">
             Foto Sampul
           </label>
-          <span className="text-[10px] text-muted-foreground">JPG, PNG, WEBP, AVIF · maks. 5 MB</span>
+          <span className="text-right text-[10px] text-muted-foreground">JPG, PNG, WEBP, AVIF · maks. 5 MB</span>
         </div>
         <div className="mt-1.5 flex items-stretch gap-3">
           <label
@@ -152,7 +152,7 @@ function BookForm({ initial, onSubmit, loading, categories, racks }: {
               onClick={clearCover}
               disabled={busy}
               data-testid="button-clear-book-cover"
-              className="self-start rounded-lg border border-border bg-background p-2 text-muted-foreground transition-colors hover:border-rose-300 hover:bg-rose-50 hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="self-start rounded-lg border border-border bg-background p-2 text-muted-foreground transition-colors hover:border-rose-300 hover:bg-rose-50 hover:text-rose-500 dark:hover:border-rose-400/60 dark:hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Hapus foto sampul"
               title="Hapus foto sampul"
             >
@@ -169,7 +169,7 @@ function BookForm({ initial, onSubmit, loading, categories, racks }: {
             className="h-8 min-w-0 flex-1 rounded-lg border border-border bg-background/60 px-2.5 text-xs focus:outline-none focus:border-primary transition-colors disabled:cursor-not-allowed disabled:opacity-60" />
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {(["year", "stock", "pages"] as const).map(k => (
           <div key={k}>
             <label className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">
@@ -180,7 +180,7 @@ function BookForm({ initial, onSubmit, loading, categories, racks }: {
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Kategori</label>
           <select value={form.categoryId ?? ""} onChange={field("categoryId")}
@@ -286,7 +286,8 @@ export default function BooksPage() {
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold gradient-text font-heading">Koleksi Buku</h1>
+          <p className="vireon-page-kicker">Data / koleksi</p>
+          <h1 className="vireon-page-title mt-1">Koleksi Buku</h1>
           <div className="mt-0.5 flex flex-wrap items-center gap-2">
             <p className="text-sm text-muted-foreground">{books.length} buku terdaftar</p>
             {lowStockCount > 0 && (
@@ -298,7 +299,7 @@ export default function BooksPage() {
         </div>
         <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
           onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-primary text-primary-foreground text-sm font-bold shadow-sm shadow-primary/20 hover:bg-primary/90 transition-all btn-primary-glow">
+          className="flex items-center gap-2 px-4 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-bold shadow-sm hover:bg-primary/90 transition-all btn-primary-glow">
           <Plus size={16} /> Tambah Buku
         </motion.button>
       </motion.div>
@@ -306,19 +307,19 @@ export default function BooksPage() {
       {/* Filters */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
         className="flex flex-wrap gap-2">
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative w-full min-w-0 flex-1 sm:min-w-[200px]">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Cari judul, pengarang, ISBN…"
             className="w-full h-10 pl-9 pr-3 rounded-xl border border-border bg-background/60 text-sm focus:outline-none focus:border-primary transition-colors" />
         </div>
         <select value={filterCat} onChange={e => setFilterCat(e.target.value === "" ? "" : Number(e.target.value))}
-          className="h-10 px-3 rounded-xl border border-border bg-background/60 text-sm focus:outline-none focus:border-primary transition-colors">
+          className="h-10 w-full px-3 rounded-xl border border-border bg-background/60 text-sm focus:outline-none focus:border-primary transition-colors sm:w-auto">
           <option value="">Semua Kategori</option>
           {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as any)}
-          className="h-10 px-3 rounded-xl border border-border bg-background/60 text-sm focus:outline-none focus:border-primary transition-colors">
+          className="h-10 w-full px-3 rounded-xl border border-border bg-background/60 text-sm focus:outline-none focus:border-primary transition-colors sm:w-auto">
           <option value="">Semua Status</option>
           <option value="available">Tersedia</option>
           <option value="borrowed">Dipinjam</option>
@@ -422,7 +423,7 @@ export default function BooksPage() {
         onClose={() => setDeleteId(null)}
         onConfirm={handleDelete}
         title="Hapus Buku"
-        message="Buku ini akan dihapus permanen dari sistem. Tindakan ini tidak dapat dibatalkan."
+        message="Buku yang tercatat dalam riwayat peminjaman tidak dapat dihapus agar histori transaksi tetap utuh."
         confirmLabel="Hapus Buku"
         loading={deleteBook.isPending}
       />

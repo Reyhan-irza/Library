@@ -1,0 +1,37 @@
+:root {
+  --vireon-ink-strong: #1d3029;
+  --vireon-ink: #31443c;
+  --vireon-muted: #6b7770;
+  --vireon-paper: #f5f3ed;
+  --vireon-paper-raised: #fcfbf7;
+  --vireon-mist: #eef1eb;
+  --vireon-deep: #173d34;
+  --vireon-green: #285b4c;
+  --vireon-green-dark: #1f493d;
+  --vireon-accent: #b5d6bb;
+  --vireon-rule: rgba(31, 63, 52, 0.15);
+  --vireon-rule-on-dark: rgba(255, 255, 255, 0.15);
+
+  --vireon-space-1: 0.25rem;
+  --vireon-space-2: 0.5rem;
+  --vireon-space-3: 0.75rem;
+  --vireon-space-4: 1rem;
+  --vireon-space-5: 1.25rem;
+  --vireon-space-6: 1.5rem;
+  --vireon-space-8: 2rem;
+  --vireon-space-10: 2.5rem;
+  --vireon-space-12: 3rem;
+  --vireon-space-16: 4rem;
+
+  --vireon-radius-sm: 0.1875rem;
+  --vireon-radius-md: 0.5rem;
+  --vireon-radius-pill: 999px;
+
+  --vireon-shadow-panel: 0 14px 38px rgba(24, 55, 45, 0.14), 0 2px 4px rgba(24, 55, 45, 0.08);
+  --vireon-shadow-focus: 0 0 0 3px rgba(181, 214, 187, 0.48);
+
+  --vireon-duration-fast: 160ms;
+  --vireon-duration-base: 220ms;
+  --vireon-duration-reveal: 580ms;
+  --vireon-ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
+}
