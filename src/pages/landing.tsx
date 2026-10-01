@@ -1329,7 +1329,12 @@ function FeaturesSection() {
             <div className="flex items-start justify-between gap-6 border-b border-white/15 pb-5">
               <div>
                 <p className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-[#b5d6bb]">01 / Koleksi</p>
-                <h3 className="mt-3 text-[22px] font-semibold tracking-[-0.04em] text-background">Katalog buku</h3>
+                <h3
+                  data-testid="landing-catalog-heading"
+                  className="landing-catalog-heading mt-3 text-[22px] font-semibold tracking-[-0.04em]"
+                >
+                  Katalog buku
+                </h3>
                 <p className="mt-2 max-w-sm text-[13px] leading-5 text-white/60">
                   Metadata yang dibutuhkan untuk menemukan dan mengelola setiap buku tetap terlihat dalam satu daftar.
                 </p>

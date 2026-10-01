@@ -793,6 +793,10 @@ body:has(.landing-shell)::before {
   letter-spacing: -0.055em;
 }
 
+.landing-shell .landing-catalog-heading {
+  color: #eff7ef;
+}
+
 .landing-shell .landing-kicker {
   color: var(--landing-forest);
   font-family: "Space Mono", monospace;

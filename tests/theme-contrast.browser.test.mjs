@@ -525,5 +525,56 @@ test("admin pages keep readable colors in light and dark themes", {
     }
   }
 
+  await cdp.evaluate(`localStorage.removeItem("perpus_user"); history.pushState({}, "", "/")`);
+  await waitForBrowser(
+    cdp,
+    `window.location.pathname === "/" && Boolean(document.querySelector('[data-testid="landing-catalog-heading"]'))`,
+    "the public landing catalog heading",
+  );
+  await cdp.evaluate(
+    `document.querySelector('[data-testid="landing-catalog-heading"]').scrollIntoView({ block: "center" })`,
+  );
+  await sleep(700); // Let scroll-linked sections settle before measuring the visible card.
+  const landingHeading = await cdp.evaluate(`(() => {
+    const title = document.querySelector('[data-testid="landing-catalog-heading"]');
+    if (!title) return null;
+
+    let surface = title;
+    while (surface) {
+      const background = getComputedStyle(surface).backgroundColor;
+      if (background !== "rgba(0, 0, 0, 0)" && background !== "transparent") break;
+      surface = surface.parentElement;
+    }
+    if (!surface) return null;
+
+    const channels = color => color.match(/[0-9.]+/g)?.slice(0, 3).map(Number);
+    const luminance = color => {
+      const values = channels(color);
+      if (!values || values.length !== 3) return null;
+      const linear = channel => {
+        const value = channel / 255;
+        return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+      };
+      return 0.2126 * linear(values[0]) + 0.7152 * linear(values[1]) + 0.0722 * linear(values[2]);
+    };
+
+    const textColor = getComputedStyle(title).color;
+    const backgroundColor = getComputedStyle(surface).backgroundColor;
+    const textLuminance = luminance(textColor);
+    const backgroundLuminance = luminance(backgroundColor);
+    if (textLuminance === null || backgroundLuminance === null) return null;
+    return {
+      textColor,
+      backgroundColor,
+      contrast: (Math.max(textLuminance, backgroundLuminance) + 0.05)
+        / (Math.min(textLuminance, backgroundLuminance) + 0.05),
+    };
+  })()`);
+  assert.ok(landingHeading, "the landing catalog title should render on its dark card");
+  assert.ok(
+    landingHeading.contrast >= 4.5,
+    `the landing catalog title contrast was ${landingHeading.contrast}:1 (${landingHeading.textColor} on ${landingHeading.backgroundColor})`,
+  );
+
   assert.ok(dashboardBadgeContrast >= 4.5, "the dashboard status badge should remain readable in dark mode");
 });
